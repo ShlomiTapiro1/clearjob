@@ -3,8 +3,8 @@
    הזן כאן את פרטי ה-Supabase שלך מ-Project Settings > API
    ==================================================== */
 
-const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_KEY  = 'YOUR_ANON_PUBLIC_KEY';
+const SUPABASE_URL  = 'https://bqcyeandwqkrqjzcdzyt.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_KESW1vaMXheQhKJcDdWA3Q_usNyNYD1';
 
 /* האם להשתמש בנתוני demo (data.js) כאשר אין חיבור לSupabase?
    true  = demo mode (ללא Supabase)
