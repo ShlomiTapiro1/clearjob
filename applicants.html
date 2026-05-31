@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול מועמדים — ClearJob</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { overflow: hidden; }
+    .app-layout { display: flex; height: calc(100vh - var(--navbar-height)); }
+
+    /* Sidebar */
+    .app-sidebar {
+      width: 260px; background: #fff; border-left: 1px solid var(--gray-200);
+      display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+    }
+    .app-sidebar-header { padding: var(--s4) var(--s5); border-bottom: 1px solid var(--gray-200); }
+    .job-selector { width: 100%; padding: 8px 12px; border: 1.5px solid var(--gray-200); border-radius: var(--radius); font-size: var(--fs-sm); font-family: var(--font); background: var(--gray-50); }
+
+    .app-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+    /* Toolbar */
+    .kanban-toolbar {
+      background: #fff; border-bottom: 1px solid var(--gray-200);
+      padding: var(--s3) var(--s5); display: flex; align-items: center;
+      gap: var(--s3); flex-shrink: 0; flex-wrap: wrap;
+    }
+
+    /* Kanban */
+    .kanban-wrap {
+      flex: 1; overflow-x: auto; overflow-y: hidden;
+      padding: var(--s4) var(--s5); display: flex; gap: var(--s3);
+    }
+    .kanban-col {
+      flex: 0 0 230px; display: flex; flex-direction: column;
+      background: var(--gray-100); border-radius: var(--radius-lg); overflow: hidden;
+      max-height: 100%;
+    }
+    .kanban-col-header {
+      padding: var(--s3) var(--s4); display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid var(--gray-200);
+      background: var(--gray-100); flex-shrink: 0;
+    }
+    .col-title { font-size: var(--fs-xs); font-weight: 700; color: var(--gray-700); }
+    .col-count {
+      background: var(--gray-300); color: var(--gray-700);
+      font-size: 11px; font-weight: 700;
+      padding: 1px 8px; border-radius: var(--radius-full);
+    }
+    .kanban-col-body {
+      flex: 1; overflow-y: auto; padding: var(--s3);
+      display: flex; flex-direction: column; gap: var(--s2);
+    }
+    .kanban-col-body.drag-over { background: var(--primary-50); border: 2px dashed var(--primary-300); }
+
+    /* Candidate Card */
+    .cand-card {
+      background: #fff; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius); padding: var(--s3);
+      cursor: grab; transition: box-shadow 150ms, border-color 150ms, transform 150ms;
+      user-select: none;
+    }
+    .cand-card:hover { box-shadow: var(--shadow); border-color: var(--primary-200); transform: translateY(-1px); }
+    .cand-card.dragging { opacity: .4; transform: scale(.97); }
+    .cand-card-name { font-size: var(--fs-sm); font-weight: 700; color: var(--gray-800); display: flex; align-items: center; gap: 5px; }
+    .cand-card-role { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+    .cand-card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: var(--s2); }
+    .score-badge { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: var(--radius-full); }
+    .score-hi { background: var(--success-bg); color: var(--success); }
+    .score-md { background: var(--primary-50); color: var(--primary-700); }
+    .score-lo { background: var(--gray-100); color: var(--gray-500); }
+    .cand-date { font-size: 11px; color: var(--gray-400); }
+
+    /* Detail Panel */
+    .detail-panel {
+      width: 320px; background: #fff; border-right: 1px solid var(--gray-200);
+      display: flex; flex-direction: column; flex-shrink: 0;
+      transform: translateX(-100%); transition: transform 250ms ease;
+      position: absolute; right: 0; top: 0; bottom: 0; z-index: 50;
+      box-shadow: var(--shadow-lg);
+    }
+    .detail-panel.open { transform: translateX(0); }
+    .dp-header {
+      padding: var(--s4) var(--s5); border-bottom: 1px solid var(--gray-200);
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(135deg, var(--primary-50), #fff);
+    }
+    .dp-name { font-size: var(--fs-lg); font-weight: 800; color: var(--gray-900); }
+    .dp-role { font-size: var(--fs-xs); color: var(--gray-500); margin-top: 2px; }
+    .dp-body { flex: 1; overflow-y: auto; padding: var(--s5); }
+    .dp-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--gray-100); font-size: var(--fs-xs); }
+    .dp-row:last-child { border-bottom: none; }
+    .dp-label { color: var(--gray-500); }
+    .dp-val { color: var(--gray-800); font-weight: 600; }
+    .dp-footer { padding: var(--s4) var(--s5); border-top: 1px solid var(--gray-200); display: flex; flex-direction: column; gap: var(--s2); }
+
+    /* Status Badge Colors */
+    .col-badge-new      { background: var(--primary-50); }
+    .col-badge-viewed   { background: var(--info-bg); }
+    .col-badge-screen   { background: var(--warning-bg); }
+    .col-badge-manager  { background: #faf5ff; }
+    .col-badge-int1     { background: var(--teal-50); }
+    .col-badge-int2     { background: var(--teal-50); }
+    .col-badge-offer    { background: var(--success-bg); }
+    .col-badge-reject   { background: var(--error-bg); }
+    .col-badge-saved    { background: var(--gray-50); }
+
+    /* Reject Modal */
+    .reject-modal { display: none; }
+    .reject-modal.open { display: flex; }
+
+    /* Stats bar at top */
+    .stats-mini {
+      display: flex; gap: var(--s5); padding: var(--s2) 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: var(--fs-xs);
+    }
+    .sm-item { display: flex; align-items: center; gap: 4px; color: var(--gray-500); }
+    .sm-num { font-weight: 800; color: var(--gray-800); }
+
+    @media (max-width: 768px) {
+      .app-sidebar { display: none; }
+      .kanban-col { flex: 0 0 190px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="index.html" class="navbar-logo">
+      <div class="navbar-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+      </div>
+      ClearJob
+    </a>
+    <nav class="navbar-nav">
+      <a href="employer-dashboard.html">דשבורד</a>
+      <a href="applicants.html" class="active">מועמדים</a>
+      <a href="create-job.html">משרה חדשה</a>
+    </nav>
+    <div class="navbar-actions">
+      <a href="employer-dashboard.html" class="btn btn-ghost btn-sm">← דשבורד</a>
+      <a href="create-job.html" class="btn btn-primary btn-sm">+ משרה חדשה</a>
+    </div>
+  </div>
+</nav>
+
+<div class="app-layout" style="position:relative;">
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="app-sidebar-header">
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-500);margin-bottom:var(--s2);">בחר משרה</div>
+      <select class="job-selector" onchange="selectJob(this.value)">
+        <option value="job1">מנהל/ת רכש (74 מועמדים)</option>
+        <option value="job5">מנהל/ת סושיאל (89 מועמדים)</option>
+        <option value="job6">מפתח/ת Full Stack (178 מועמדים)</option>
+      </select>
+    </div>
+
+    <div style="padding:var(--s4) var(--s5);">
+      <div class="stats-mini" style="flex-direction:column;gap:var(--s2);">
+        <div class="sm-item"><span class="sm-num" style="color:var(--primary-600);">74</span> סה"כ מגישים</div>
+        <div class="sm-item"><span class="sm-num" style="color:var(--warning);">43</span> ממתינים לבדיקה</div>
+        <div class="sm-item"><span class="sm-num" style="color:var(--teal-600);">6</span> בראיון</div>
+        <div class="sm-item"><span class="sm-num" style="color:var(--success);">1</span> קיבלו הצעה</div>
+        <div class="sm-item"><span class="sm-num" style="color:var(--error);">18</span> נדחו</div>
+      </div>
+    </div>
+
+    <div style="padding:0 var(--s4);margin-top:var(--s2);">
+      <div class="alert alert-warning" style="font-size:var(--fs-xs);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        43 ממתינים מעל 7 ימים
+      </div>
+    </div>
+
+    <div style="padding:var(--s4) var(--s5);margin-top:var(--s2);">
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-500);margin-bottom:var(--s2);">פעולות מהירות</div>
+      <button class="btn btn-secondary w-full btn-sm" style="margin-bottom:var(--s2);" onclick="showToast('תזכורת נשלחה לכל הממתינים')">שלח תזכורות</button>
+      <button class="btn btn-ghost w-full btn-sm" onclick="showToast('יצוא CSV בוצע')">ייצא CSV</button>
+    </div>
+
+    <div style="padding:var(--s4) var(--s5);border-top:1px solid var(--gray-200);margin-top:auto;">
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-500);margin-bottom:var(--s2);">פילטר לפי ציון</div>
+      <input type="range" min="0" max="100" value="0" class="w-full" id="score-filter" oninput="filterByScore(this.value)" style="accent-color:var(--primary-600);">
+      <div style="font-size:var(--fs-xs);color:var(--gray-500);margin-top:4px;">מינימום: <span id="score-val">0</span></div>
+    </div>
+  </aside>
+
+  <!-- Main Kanban -->
+  <div class="app-main">
+
+    <!-- Toolbar -->
+    <div class="kanban-toolbar">
+      <div style="flex:1;min-width:160px;position:relative;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" class="form-input" placeholder="חפש מועמד..." style="padding-right:36px;font-size:var(--fs-xs);" id="cand-search" oninput="searchCandidates(this.value)">
+      </div>
+      <select class="form-select" style="width:130px;font-size:var(--fs-xs);" onchange="filterCandidates(this.value)">
+        <option value="all">כל המועמדים</option>
+        <option value="confidential">דיסקרטיים</option>
+        <option value="high-score">ציון גבוה</option>
+      </select>
+      <div style="font-size:var(--fs-xs);color:var(--gray-500);">גרור כרטיס לשינוי סטטוס</div>
+      <div style="display:flex;gap:var(--s2);">
+        <button class="btn btn-secondary btn-sm" onclick="showToast('תזכורת נשלחה לכל מועמדי שלב ממתין')">עדכן ממתינים</button>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-wrap" id="kanban-board"></div>
+  </div>
+
+  <!-- Detail Panel (slides in from right) -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="dp-header">
+      <div>
+        <div class="dp-name" id="dp-name">—</div>
+        <div class="dp-role" id="dp-role">—</div>
+      </div>
+      <button class="btn btn-ghost btn-icon" onclick="closePanel()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dp-body" id="dp-body"></div>
+    <div class="dp-footer" id="dp-footer"></div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay reject-modal" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">דחיית מועמד</div>
+      <button class="btn btn-ghost btn-icon" onclick="closeRejectModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:var(--fs-sm);color:var(--gray-600);margin-bottom:var(--s4);">בחר סיבת דחייה — המועמד יקבל הודעה מכבדת.</p>
+      <div class="form-group" style="margin-bottom:var(--s4);">
+        <label class="form-label">סיבת דחייה <span class="form-required">*</span></label>
+        <select class="form-select" id="reject-reason">
+          <option value="">בחר סיבה...</option>
+          <option value="missingExperience">חסר ניסיון רלוונטי</option>
+          <option value="missingRequiredSkill">חסרה מיומנות חובה</option>
+          <option value="salaryMismatch">ציפיות שכר לא תואמות</option>
+          <option value="availabilityMismatch">זמינות לא מתאימה</option>
+          <option value="locationMismatch">מיקום לא מתאים</option>
+          <option value="anotherCandidateAdvanced">מועמד אחר התקדם</option>
+          <option value="notFitForCurrentStage">חוסר התאמה לשלב הנוכחי</option>
+          <option value="other">אחר</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">הודעה למועמד</label>
+        <textarea class="form-textarea" rows="4" readonly style="background:var(--gray-50);color:var(--gray-600);font-size:var(--fs-xs);">התקבלה החלטה לא להמשיך בתהליך הגיוס עבור משרה זו.
+
+סיבה מרכזית: [תוצג בהתאם לבחירה]
+
+תודה שהגשת מועמדות. אנו מאחלים לך הצלחה בחיפוש הבא.</textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRejectModal()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmReject()">שלח דחייה</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/data.js"></script>
+<script>
+const COLUMNS = [
+  { id: 'new',       label: 'חדש',           colorClass: 'col-badge-new' },
+  { id: 'viewed',    label: 'נצפה',           colorClass: 'col-badge-viewed' },
+  { id: 'screening', label: 'סינון ראשוני',   colorClass: 'col-badge-screen' },
+  { id: 'manager',   label: 'הועבר למנהל',    colorClass: 'col-badge-manager' },
+  { id: 'interview1',label: 'ראיון ראשון',    colorClass: 'col-badge-int1' },
+  { id: 'interview2',label: 'ראיון מתקדם',    colorClass: 'col-badge-int2' },
+  { id: 'offer',     label: 'הצעה',           colorClass: 'col-badge-offer' },
+  { id: 'rejected',  label: 'נדחה',           colorClass: 'col-badge-reject' },
+  { id: 'saved',     label: 'שמור לעתיד',     colorClass: 'col-badge-saved' }
+];
+
+let applicants = JSON.parse(JSON.stringify(JOB1_APPLICANTS));
+let draggedId = null;
+let selectedId = null;
+let minScore = 0;
+let searchQ = '';
+
+function getScore(a) { return a.score; }
+function scoreClass(s) { return s >= 85 ? 'score-hi' : s >= 70 ? 'score-md' : 'score-lo'; }
+
+function buildKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = '';
+
+  COLUMNS.forEach(col => {
+    const colApps = applicants.filter(a =>
+      a.status === col.id &&
+      a.score >= minScore &&
+      (searchQ === '' || a.name.includes(searchQ) || a.role.includes(searchQ))
+    );
+
+    const colEl = document.createElement('div');
+    colEl.className = 'kanban-col';
+    colEl.dataset.col = col.id;
+
+    colEl.innerHTML = `
+      <div class="kanban-col-header ${col.colorClass}">
+        <span class="col-title">${col.label}</span>
+        <span class="col-count">${colApps.length}</span>
+      </div>
+      <div class="kanban-col-body" id="col-${col.id}" ondragover="onDragOver(event, '${col.id}')" ondrop="onDrop(event, '${col.id}')" ondragleave="onDragLeave(event)">
+        ${colApps.map(a => buildCard(a)).join('')}
+      </div>
+    `;
+    board.appendChild(colEl);
+  });
+}
+
+function buildCard(a) {
+  return `
+    <div class="cand-card" id="card-${a.id}" draggable="true"
+      ondragstart="onDragStart(event, '${a.id}')"
+      ondragend="onDragEnd(event)"
+      onclick="openPanel('${a.id}')">
+      <div class="cand-card-name">
+        ${a.isConfidential ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--gray-400);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' : ''}
+        ${a.name}
+      </div>
+      <div class="cand-card-role">${a.role}</div>
+      <div class="cand-card-meta">
+        <span class="score-badge ${scoreClass(a.score)}">${a.score}</span>
+        <span class="cand-date">${a.appliedAt}</span>
+      </div>
+    </div>`;
+}
+
+// --- Drag & Drop ---
+function onDragStart(e, id) {
+  draggedId = id;
+  setTimeout(() => { const c = document.getElementById(`card-${id}`); if (c) c.classList.add('dragging'); }, 0);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragEnd(e) {
+  document.querySelectorAll('.cand-card').forEach(c => c.classList.remove('dragging'));
+  document.querySelectorAll('.kanban-col-body').forEach(c => c.classList.remove('drag-over'));
+}
+
+function onDragOver(e, colId) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.kanban-col-body').forEach(c => c.classList.remove('drag-over'));
+  document.getElementById(`col-${colId}`).classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  e.currentTarget.querySelector?.('.kanban-col-body')?.classList?.remove('drag-over');
+}
+
+function onDrop(e, colId) {
+  e.preventDefault();
+  if (!draggedId) return;
+  const app = applicants.find(a => a.id === draggedId);
+  if (!app) return;
+  const prevStatus = app.status;
+  if (colId === 'rejected') { openRejectModal(draggedId); return; }
+  app.status = colId;
+  buildKanban();
+  showStatusToast(app.name, colId, prevStatus);
+  draggedId = null;
+}
+
+function showStatusToast(name, newStatus, prevStatus) {
+  const colLabel = COLUMNS.find(c => c.id === newStatus)?.label || newStatus;
+  showToast(`${name} → ${colLabel}`);
+}
+
+// --- Panel ---
+function openPanel(id) {
+  const a = applicants.find(ap => ap.id === id);
+  if (!a) return;
+  selectedId = id;
+  document.getElementById('dp-name').textContent = a.isConfidential ? 'מועמד/ת דיסקרטי/ת' : a.name;
+  document.getElementById('dp-role').textContent = a.role;
+
+  const colLabel = COLUMNS.find(c => c.id === a.status)?.label || a.status;
+  document.getElementById('dp-body').innerHTML = `
+    <div style="margin-bottom:var(--s4);">
+      <span class="badge badge-primary" style="font-size:var(--fs-xs);">${colLabel}</span>
+      ${a.isConfidential ? '<span class="badge badge-gray" style="font-size:var(--fs-xs);margin-right:var(--s2);">דיסקרטי</span>' : ''}
+    </div>
+    <div style="margin-bottom:var(--s5);">
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">פרטי מועמד</div>
+      <div class="dp-row"><span class="dp-label">תפקיד</span><span class="dp-val">${a.role}</span></div>
+      <div class="dp-row"><span class="dp-label">ניסיון</span><span class="dp-val">${a.exp}</span></div>
+      <div class="dp-row"><span class="dp-label">ציפיות שכר</span><span class="dp-val">₪${a.salary}</span></div>
+      <div class="dp-row"><span class="dp-label">הגיש</span><span class="dp-val">${a.appliedAt}</span></div>
+      <div class="dp-row"><span class="dp-label">ציון התאמה</span><span class="dp-val"><span class="score-badge ${scoreClass(a.score)}">${a.score}/100</span></span></div>
+    </div>
+    <div style="margin-bottom:var(--s5);">
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">שלב נוכחי</div>
+      <div style="background:var(--gray-50);border-radius:var(--radius-lg);padding:var(--s3) var(--s4);font-size:var(--fs-sm);font-weight:600;color:var(--gray-700);">${colLabel}</div>
+    </div>
+    <div style="margin-bottom:var(--s5);">
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">הערות פנימיות</div>
+      <textarea class="form-textarea" rows="3" placeholder="הוסף הערה פנימית..." style="font-size:var(--fs-xs);" id="notes-${a.id}"></textarea>
+    </div>
+    <div>
+      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">שינוי שלב מהיר</div>
+      <select class="form-select" style="font-size:var(--fs-xs);" onchange="moveCard('${a.id}', this.value)">
+        ${COLUMNS.map(c => `<option value="${c.id}" ${a.status === c.id ? 'selected' : ''}>${c.label}</option>`).join('')}
+      </select>
+    </div>
+  `;
+
+  document.getElementById('dp-footer').innerHTML = `
+    <button class="btn btn-teal" onclick="moveCard('${a.id}', getNextStatus('${a.status}'))">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      העבר לשלב הבא
+    </button>
+    <div style="display:flex;gap:var(--s2);">
+      <button class="btn btn-secondary" onclick="moveCard('${a.id}', 'saved')">שמור לעתיד</button>
+      <button class="btn btn-danger" onclick="openRejectModal('${a.id}')">דחה</button>
+    </div>
+    <button class="btn btn-ghost" onclick="showToast('הזמנה לראיון נשלחה!')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      הזמן לראיון
+    </button>
+  `;
+
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  selectedId = null;
+}
+
+function getNextStatus(current) {
+  const idx = COLUMNS.findIndex(c => c.id === current);
+  if (idx < 0 || idx >= COLUMNS.length - 3) return current;
+  return COLUMNS[idx + 1].id;
+}
+
+function moveCard(id, newStatus) {
+  if (newStatus === 'rejected') { openRejectModal(id); return; }
+  const a = applicants.find(ap => ap.id === id);
+  if (a) { a.status = newStatus; }
+  buildKanban();
+  if (selectedId === id) openPanel(id);
+  showToast(`סטטוס עודכן → ${COLUMNS.find(c => c.id === newStatus)?.label || newStatus}`);
+}
+
+// --- Reject Modal ---
+let rejectTargetId = null;
+function openRejectModal(id) {
+  rejectTargetId = id;
+  document.getElementById('reject-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeRejectModal() {
+  document.getElementById('reject-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  rejectTargetId = null;
+}
+function confirmReject() {
+  const reason = document.getElementById('reject-reason').value;
+  if (!reason) return showToast('נא לבחור סיבת דחייה');
+  const a = applicants.find(ap => ap.id === rejectTargetId);
+  if (a) { a.status = 'rejected'; a.rejectionReason = reason; }
+  closeRejectModal();
+  buildKanban();
+  closePanel();
+  showToast(`${a?.name || 'מועמד'} נדחה בצורה מכבדת — הודעה נשלחה`);
+}
+
+// --- Filters ---
+function searchCandidates(q) { searchQ = q; buildKanban(); }
+function filterByScore(val) {
+  minScore = parseInt(val);
+  document.getElementById('score-val').textContent = val;
+  buildKanban();
+}
+function filterCandidates(val) {
+  if (val === 'confidential') { applicants = JOB1_APPLICANTS.filter(a => a.isConfidential); }
+  else if (val === 'high-score') { applicants = JOB1_APPLICANTS.filter(a => a.score >= 85); }
+  else { applicants = JSON.parse(JSON.stringify(JOB1_APPLICANTS)); }
+  buildKanban();
+}
+function selectJob(id) { showToast(`טוען מועמדים עבור ${id}...`); }
+
+function showToast(msg) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+buildKanban();
+</script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/mobile.js"></script>
+</body>
+</html>

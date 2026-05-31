@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>דשבורד מעסיק — ClearJob</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .app-layout { display: flex; min-height: calc(100vh - var(--navbar-height)); }
+
+    /* Performance Score Ring */
+    .perf-ring-wrap { display: flex; align-items: center; gap: var(--s6); }
+    .perf-ring {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      background: conic-gradient(var(--teal-500) 0% 78%, var(--gray-200) 78% 100%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; flex-shrink: 0;
+    }
+    .perf-ring::after {
+      content: ''; position: absolute;
+      width: 74px; height: 74px; border-radius: 50%; background: #fff;
+    }
+    .perf-ring-num {
+      position: relative; z-index: 1;
+      font-size: var(--fs-xl); font-weight: 800; color: var(--gray-900);
+    }
+
+    /* Alert Cards */
+    .alert-card {
+      display: flex; align-items: flex-start; gap: var(--s3);
+      padding: var(--s4); border-radius: var(--radius-lg); border: 1.5px solid;
+      font-size: var(--fs-sm);
+    }
+    .alert-card.warning { background: var(--warning-bg); border-color: #fde68a; color: var(--warning); }
+    .alert-card.error   { background: var(--error-bg);   border-color: #fecaca; color: var(--error); }
+    .alert-card.info    { background: var(--info-bg);    border-color: #bae6fd; color: var(--info); }
+
+    /* Job Row */
+    .job-row {
+      display: flex; align-items: center; gap: var(--s4);
+      padding: var(--s4) var(--s5); border-bottom: 1px solid var(--gray-100);
+      transition: background var(--transition);
+    }
+    .job-row:last-child { border-bottom: none; }
+    .job-row:hover { background: var(--gray-50); }
+    .job-row-title { font-weight: 700; font-size: var(--fs-sm); color: var(--gray-800); }
+    .job-row-meta { font-size: var(--fs-xs); color: var(--gray-500); margin-top: 2px; }
+
+    /* Mini Stats */
+    .mini-stat { text-align: center; min-width: 60px; }
+    .mini-stat-num { font-size: var(--fs-md); font-weight: 800; color: var(--gray-900); }
+    .mini-stat-label { font-size: 11px; color: var(--gray-400); }
+
+    /* Analytics Chart (CSS only) */
+    .bar-chart { display: flex; align-items: flex-end; gap: var(--s2); height: 120px; padding: var(--s3) 0; }
+    .bar-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--s1); flex: 1; }
+    .bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, var(--primary-400), var(--primary-600));
+      transition: height var(--transition-md);
+    }
+    .bar-label { font-size: 10px; color: var(--gray-500); white-space: nowrap; }
+    .bar-val { font-size: 11px; font-weight: 700; color: var(--gray-700); }
+
+    /* Section tabs */
+    .tab-bar { display: flex; gap: var(--s1); background: var(--gray-100); border-radius: var(--radius-lg); padding: 4px; margin-bottom: var(--s5); width: fit-content; }
+    .tab-item {
+      padding: 7px 18px; border-radius: var(--radius); font-size: var(--fs-xs); font-weight: 600;
+      color: var(--gray-600); cursor: pointer; transition: all var(--transition); white-space: nowrap;
+    }
+    .tab-item.active { background: #fff; color: var(--primary-700); box-shadow: var(--shadow-xs); }
+
+    /* Perf metrics */
+    .perf-metric { display: flex; align-items: center; justify-content: space-between; padding: var(--s3) 0; border-bottom: 1px solid var(--gray-100); }
+    .perf-metric:last-child { border-bottom: none; }
+    .perf-metric-label { font-size: var(--fs-xs); color: var(--gray-600); }
+    .perf-metric-val { font-size: var(--fs-sm); font-weight: 700; color: var(--gray-800); }
+    .perf-bar { height: 6px; background: var(--gray-200); border-radius: 99px; width: 80px; overflow: hidden; }
+    .perf-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primary-500), var(--teal-500)); }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="index.html" class="navbar-logo">
+      <div class="navbar-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+      </div>
+      ClearJob
+    </a>
+    <nav class="navbar-nav">
+      <a href="employer-dashboard.html" class="active">דשבורד</a>
+      <a href="applicants.html">מועמדים</a>
+      <a href="create-job.html">משרה חדשה</a>
+    </nav>
+    <div class="navbar-actions">
+      <span style="font-size:var(--fs-sm);color:var(--gray-600);">טכנולוגיות אמזיג</span>
+      <a href="create-job.html" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        פרסם משרה
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">ניהול</div>
+      <div class="sidebar-link active" onclick="switchSidebar('dashboard', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        סקירה כללית
+      </div>
+      <div class="sidebar-link" onclick="switchSidebar('jobs', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        המשרות שלי
+        <span class="sidebar-badge">3</span>
+      </div>
+      <a href="applicants.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        ניהול מועמדים
+        <span class="sidebar-badge">18</span>
+      </a>
+      <div class="sidebar-link" onclick="switchSidebar('analytics', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        אנליטיקס
+      </div>
+      <div class="sidebar-link" onclick="switchSidebar('performance', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        ביצועים
+      </div>
+    </div>
+    <div class="sidebar-section" style="margin-top:auto;">
+      <a href="create-job.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        פרסם משרה חדשה
+      </a>
+      <div class="sidebar-link" onclick="switchSidebar('settings', this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M5.34 5.34l-1.41-1.41M12 2v2M12 20v2"/></svg>
+        הגדרות
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">סקירה כללית</div>
+          <div class="page-subtitle">יום ראשון, 31 במאי 2026</div>
+        </div>
+        <a href="create-job.html" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          פרסם משרה חדשה
+        </a>
+      </div>
+
+      <!-- Alerts -->
+      <div style="display:flex;flex-direction:column;gap:var(--s3);margin-bottom:var(--s5);">
+        <div class="alert-card warning">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div><strong>43 מועמדים ממתינים יותר מ-7 ימים</strong> — מומלץ לעדכן את הסטטוס שלהם כדי לשמור על חוויית מועמד טובה.</div>
+        </div>
+        <div class="alert-card info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div><strong>18 מועמדים חדשים</strong> מחכים לבדיקה — 7 מהם לא נצפו עדיין.</div>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-4 gap-4" style="gap:var(--s4);margin-bottom:var(--s6);">
+        <div class="stat-card">
+          <div class="stat-icon blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+          <div><div class="stat-label">משרות פעילות</div><div class="stat-value">3</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon teal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div><div class="stat-label">סה"כ מועמדים</div><div class="stat-value">211</div><div class="stat-sub">+18 השבוע</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div><div class="stat-label">אחוז מענה</div><div class="stat-value">84%</div><div class="stat-sub">יעד: 90%</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><div class="stat-label">זמן תגובה</div><div class="stat-value">4.2</div><div class="stat-sub">ימים בממוצע</div></div>
+        </div>
+      </div>
+
+      <!-- Active Jobs -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--s4);">
+        <div class="card" style="overflow:hidden;">
+          <div style="padding:var(--s4) var(--s5);border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:var(--fs-sm);">משרות פעילות</span>
+            <a href="#" onclick="switchSidebar('jobs',null)" style="font-size:var(--fs-xs);color:var(--primary-600);">הצג הכל</a>
+          </div>
+
+          <div class="job-row">
+            <div style="flex:1;min-width:0;">
+              <div class="job-row-title">מנהל/ת רכש</div>
+              <div class="job-row-meta">חברה דיסקרטית · תל אביב · פורסם 28/05</div>
+            </div>
+            <div class="mini-stat"><div class="mini-stat-num">74</div><div class="mini-stat-label">מגישים</div></div>
+            <div class="mini-stat"><div class="mini-stat-num" style="color:var(--warning);">43</div><div class="mini-stat-label">ממתינים</div></div>
+            <div class="mini-stat"><div class="mini-stat-num" style="color:var(--teal-600);">6</div><div class="mini-stat-label">ראיון</div></div>
+            <a href="applicants.html" class="btn btn-primary btn-sm">Kanban</a>
+          </div>
+
+          <div class="job-row">
+            <div style="flex:1;min-width:0;">
+              <div class="job-row-title">מנהל/ת סושיאל מדיה</div>
+              <div class="job-row-meta">טכנולוגיות אמזיג · תל אביב · פורסם 22/05</div>
+            </div>
+            <div class="mini-stat"><div class="mini-stat-num">89</div><div class="mini-stat-label">מגישים</div></div>
+            <div class="mini-stat"><div class="mini-stat-num" style="color:var(--warning);">47</div><div class="mini-stat-label">ממתינים</div></div>
+            <div class="mini-stat"><div class="mini-stat-num" style="color:var(--teal-600);">7</div><div class="mini-stat-label">ראיון</div></div>
+            <a href="applicants.html" class="btn btn-primary btn-sm">Kanban</a>
+          </div>
+
+          <div class="job-row">
+            <div style="flex:1;min-width:0;">
+              <div class="job-row-title">מפתח/ת Full Stack</div>
+              <div class="job-row-meta">טכנולוגיות אמזיג · תל אביב · פורסם 18/05</div>
+            </div>
+            <div class="mini-stat"><div class="mini-stat-num">178</div><div class="mini-stat-label">מגישים</div></div>
+            <div class="mini-stat"><div class="mini-stat-num" style="color:var(--success);">76</div><div class="mini-stat-label">ממתינים</div></div>
+            <div class="mini-stat"><div class="mini-stat-num" style="color:var(--teal-600);">15</div><div class="mini-stat-label">ראיון</div></div>
+            <a href="applicants.html" class="btn btn-primary btn-sm">Kanban</a>
+          </div>
+        </div>
+
+        <!-- Performance Score -->
+        <div class="card card-padded">
+          <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s5);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;color:var(--primary-500);margin-left:4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Employer Performance Score
+          </div>
+          <div class="perf-ring-wrap" style="justify-content:center;margin-bottom:var(--s5);">
+            <div class="perf-ring">
+              <div class="perf-ring-num">78</div>
+            </div>
+          </div>
+          <div class="perf-metric">
+            <span class="perf-metric-label">זמן תגובה</span>
+            <div style="display:flex;align-items:center;gap:var(--s2);">
+              <div class="perf-bar"><div class="perf-bar-fill" style="width:70%;"></div></div>
+              <span class="perf-metric-val">4.2 ימים</span>
+            </div>
+          </div>
+          <div class="perf-metric">
+            <span class="perf-metric-label">אחוז מענה</span>
+            <div style="display:flex;align-items:center;gap:var(--s2);">
+              <div class="perf-bar"><div class="perf-bar-fill" style="width:84%;background:var(--success);"></div></div>
+              <span class="perf-metric-val">84%</span>
+            </div>
+          </div>
+          <div class="perf-metric">
+            <span class="perf-metric-label">ק"ח שנפתחו</span>
+            <div style="display:flex;align-items:center;gap:var(--s2);">
+              <div class="perf-bar"><div class="perf-bar-fill" style="width:60%;background:var(--warning);"></div></div>
+              <span class="perf-metric-val">60%</span>
+            </div>
+          </div>
+          <div class="perf-metric">
+            <span class="perf-metric-label">דחיות עם סיבה</span>
+            <div style="display:flex;align-items:center;gap:var(--s2);">
+              <div class="perf-bar"><div class="perf-bar-fill" style="width:95%;"></div></div>
+              <span class="perf-metric-val">95%</span>
+            </div>
+          </div>
+          <div style="margin-top:var(--s4);">
+            <div class="alert alert-warning" style="font-size:var(--fs-xs);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              שפר את זמן התגובה כדי לקבל את תגית "מגיב מהר"
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== JOBS VIEW ===== -->
+    <div id="view-jobs" style="display:none;">
+      <div class="page-header">
+        <div><div class="page-title">המשרות שלי</div></div>
+        <a href="create-job.html" class="btn btn-primary">+ פרסם משרה חדשה</a>
+      </div>
+      <div class="card" style="overflow:hidden;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>משרה</th><th>מיקום</th><th>מגישים</th><th>פתוחים</th><th>בראיון</th><th>סטטוס</th><th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div style="font-weight:700;font-size:var(--fs-sm);">מנהל/ת רכש</div><div style="font-size:var(--fs-xs);color:var(--gray-500);">דיסקרטי · פורסם 28/05</div></td>
+                <td>תל אביב</td><td>74</td><td><span style="color:var(--warning);font-weight:700;">43</span></td><td>6</td>
+                <td><span class="badge badge-success">פעיל</span></td>
+                <td><div style="display:flex;gap:var(--s2);"><a href="applicants.html" class="btn btn-primary btn-sm">Kanban</a><button class="btn btn-ghost btn-sm">עצור</button></div></td>
+              </tr>
+              <tr>
+                <td><div style="font-weight:700;font-size:var(--fs-sm);">מנהל/ת סושיאל</div><div style="font-size:var(--fs-xs);color:var(--gray-500);">פורסם 22/05</div></td>
+                <td>תל אביב</td><td>89</td><td>47</td><td>7</td>
+                <td><span class="badge badge-success">פעיל</span></td>
+                <td><div style="display:flex;gap:var(--s2);"><a href="applicants.html" class="btn btn-primary btn-sm">Kanban</a><button class="btn btn-ghost btn-sm">עצור</button></div></td>
+              </tr>
+              <tr>
+                <td><div style="font-weight:700;font-size:var(--fs-sm);">מפתח/ת Full Stack</div><div style="font-size:var(--fs-xs);color:var(--gray-500);">פורסם 18/05</div></td>
+                <td>תל אביב</td><td>178</td><td>76</td><td>15</td>
+                <td><span class="badge badge-success">פעיל</span></td>
+                <td><div style="display:flex;gap:var(--s2);"><a href="applicants.html" class="btn btn-primary btn-sm">Kanban</a><button class="btn btn-ghost btn-sm">עצור</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ANALYTICS VIEW ===== -->
+    <div id="view-analytics" style="display:none;">
+      <div class="page-header"><div><div class="page-title">אנליטיקס</div><div class="page-subtitle">30 הימים האחרונים</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);">
+        <div class="card card-padded">
+          <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s4);">מגישים לפי יום (שבוע אחרון)</div>
+          <div class="bar-chart">
+            <div class="bar-wrap"><div class="bar" style="height:40%;"></div><div class="bar-val">8</div><div class="bar-label">א'</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:65%;"></div><div class="bar-val">13</div><div class="bar-label">ב'</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:80%;"></div><div class="bar-val">16</div><div class="bar-label">ג'</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:55%;"></div><div class="bar-val">11</div><div class="bar-label">ד'</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:90%;"></div><div class="bar-val">18</div><div class="bar-label">ה'</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:30%;background:var(--gray-300);"></div><div class="bar-val">6</div><div class="bar-label">ו'</div></div>
+            <div class="bar-wrap"><div class="bar" style="height:10%;background:var(--gray-300);"></div><div class="bar-val">2</div><div class="bar-label">ש'</div></div>
+          </div>
+        </div>
+        <div class="card card-padded">
+          <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s4);">שלבי משפך גיוס — מנהל/ת רכש</div>
+          <div style="display:flex;flex-direction:column;gap:var(--s3);">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);margin-bottom:4px;"><span>הגישו</span><span style="font-weight:700;">74</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:100%;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);margin-bottom:4px;"><span>נצפו</span><span style="font-weight:700;">31 (42%)</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:42%;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);margin-bottom:4px;"><span>עברו לראיון</span><span style="font-weight:700;">6 (8%)</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:8%;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);margin-bottom:4px;"><span>נדחו</span><span style="font-weight:700;">18 (24%)</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:24%;background:var(--error);"></div></div>
+            </div>
+          </div>
+          <div class="alert alert-info" style="margin-top:var(--s4);font-size:var(--fs-xs);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/></svg>
+            60% מהמגישים לא נצפו עדיין — שקול להגדיל את קצב הסקירה
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-padded" style="margin-top:var(--s4);">
+        <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s4);">סיבות דחייה — כל המשרות</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s4);">
+          <div style="text-align:center;padding:var(--s4);background:var(--gray-50);border-radius:var(--radius-lg);">
+            <div style="font-size:var(--fs-xl);font-weight:800;color:var(--error);">38%</div>
+            <div style="font-size:var(--fs-xs);color:var(--gray-500);">חסרה מיומנות חובה</div>
+          </div>
+          <div style="text-align:center;padding:var(--s4);background:var(--gray-50);border-radius:var(--radius-lg);">
+            <div style="font-size:var(--fs-xl);font-weight:800;color:var(--warning);">22%</div>
+            <div style="font-size:var(--fs-xs);color:var(--gray-500);">ציפיות שכר</div>
+          </div>
+          <div style="text-align:center;padding:var(--s4);background:var(--gray-50);border-radius:var(--radius-lg);">
+            <div style="font-size:var(--fs-xl);font-weight:800;color:var(--info);">18%</div>
+            <div style="font-size:var(--fs-xs);color:var(--gray-500);">ניסיון לא מספיק</div>
+          </div>
+          <div style="text-align:center;padding:var(--s4);background:var(--gray-50);border-radius:var(--radius-lg);">
+            <div style="font-size:var(--fs-xl);font-weight:800;color:var(--gray-500);">22%</div>
+            <div style="font-size:var(--fs-xs);color:var(--gray-500);">אחר</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PERFORMANCE VIEW ===== -->
+    <div id="view-performance" style="display:none;">
+      <div class="page-header"><div><div class="page-title">ביצועי מעסיק</div><div class="page-subtitle">Employer Performance Score — 78/100</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);">
+        <div class="card card-padded">
+          <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s5);">מדד ביצועים</div>
+          <div style="display:flex;justify-content:center;margin-bottom:var(--s5);">
+            <div class="perf-ring" style="width:130px;height:130px;">
+              <div class="perf-ring-num" style="font-size:var(--fs-3xl);">78</div>
+            </div>
+          </div>
+          <div class="perf-metric"><span class="perf-metric-label">זמן תגובה ממוצע</span><span class="perf-metric-val">4.2 ימים</span></div>
+          <div class="perf-metric"><span class="perf-metric-label">אחוז מועמדים שקיבלו תשובה</span><span class="perf-metric-val">84%</span></div>
+          <div class="perf-metric"><span class="perf-metric-label">אחוז קורות חיים שנפתחו</span><span class="perf-metric-val">60%</span></div>
+          <div class="perf-metric"><span class="perf-metric-label">אחוז דחיות עם סיבה</span><span class="perf-metric-val">95%</span></div>
+          <div class="perf-metric"><span class="perf-metric-label">משך תהליך ממוצע</span><span class="perf-metric-val">24 ימים</span></div>
+          <div class="perf-metric"><span class="perf-metric-label">יחס ראיון להצעות</span><span class="perf-metric-val">1:4</span></div>
+        </div>
+        <div class="card card-padded">
+          <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s5);">תגיות שהרווחת</div>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--s3);margin-bottom:var(--s5);">
+            <span class="badge badge-success" style="padding:8px 16px;font-size:var(--fs-xs);">✓ שכר גלוי</span>
+            <span class="badge badge-success" style="padding:8px 16px;font-size:var(--fs-xs);">✓ מעסיק שקוף</span>
+            <span class="badge badge-success" style="padding:8px 16px;font-size:var(--fs-xs);">✓ נותן תשובה</span>
+          </div>
+          <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--s3);color:var(--gray-500);">תגיות שעדיין לא הגעת</div>
+          <div style="display:flex;flex-direction:column;gap:var(--s3);">
+            <div class="alert alert-warning" style="font-size:var(--fs-xs);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/></svg>
+              "מגיב מהר" — זמן תגובה 4.2 ימים, יעד: 3 ימים
+            </div>
+            <div class="alert alert-warning" style="font-size:var(--fs-xs);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/></svg>
+              "קורות חיים נקראים" — רק 60% נפתחים, יעד: 80%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS VIEW ===== -->
+    <div id="view-settings" style="display:none;">
+      <div class="page-header"><div><div class="page-title">הגדרות חשבון</div></div><button class="btn btn-primary" onclick="showToast('הגדרות נשמרו!')">שמור</button></div>
+      <div class="card card-padded" style="max-width:600px;">
+        <div style="font-weight:700;margin-bottom:var(--s4);">פרטי חברה</div>
+        <div style="display:flex;flex-direction:column;gap:var(--s4);">
+          <div class="form-group"><label class="form-label">שם חברה</label><input class="form-input" value="טכנולוגיות אמזיג"></div>
+          <div class="form-group"><label class="form-label">תחום</label><input class="form-input" value="תוכנה וטכנולוגיה"></div>
+          <div class="form-group"><label class="form-label">גודל חברה</label><select class="form-select"><option>200–500 עובדים</option></select></div>
+          <div class="form-group"><label class="form-label">סוג מעסיק</label><select class="form-select"><option>מעסיק ישיר</option><option>חברת השמה</option></select></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/data.js"></script>
+<script>
+function switchSidebar(view, el) {
+  ['dashboard','jobs','analytics','performance','settings'].forEach(v => {
+    const el = document.getElementById(`view-${v}`);
+    if (el) el.style.display = v === view ? '' : 'none';
+  });
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function showToast(msg) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/mobile.js"></script>
+</body>
+</html>

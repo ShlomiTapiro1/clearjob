@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>חיפוש משרות — ClearJob</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .jobs-layout { display: flex; gap: var(--s6); align-items: flex-start; margin-top: var(--s6); }
+    .filters-sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      position: sticky;
+      top: calc(var(--navbar-height) + 16px);
+      background: #fff;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .filters-header {
+      padding: var(--s4) var(--s5);
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: var(--fs-sm);
+    }
+    .filter-section { padding: var(--s4) var(--s5); border-bottom: 1px solid var(--gray-100); }
+    .filter-section-title { font-size: var(--fs-xs); font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: .05em; margin-bottom: var(--s3); }
+    .filter-option { display: flex; align-items: center; gap: var(--s2); padding: 4px 0; cursor: pointer; font-size: var(--fs-sm); color: var(--gray-700); }
+    .filter-option input[type="checkbox"] { accent-color: var(--primary-600); width: 16px; height: 16px; cursor: pointer; }
+    .filter-option:hover { color: var(--primary-600); }
+    .filter-range { display: flex; gap: var(--s2); align-items: center; }
+    .filter-range input { flex: 1; min-width: 0; }
+    .jobs-main { flex: 1; min-width: 0; }
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--s4);
+      flex-wrap: wrap;
+      gap: var(--s3);
+    }
+    .results-count { font-size: var(--fs-sm); color: var(--gray-500); }
+    .results-count strong { color: var(--gray-800); }
+    .sort-select { padding: 7px 12px; border: 1.5px solid var(--gray-200); border-radius: var(--radius); font-size: var(--fs-xs); font-family: var(--font); color: var(--gray-700); background: #fff; cursor: pointer; }
+    .active-filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
+    .active-filter-tag {
+      display: inline-flex; align-items: center; gap: var(--s1);
+      background: var(--primary-50); color: var(--primary-700);
+      border: 1.5px solid var(--primary-100);
+      padding: 4px 10px; border-radius: var(--radius-full);
+      font-size: var(--fs-xs); font-weight: 600; cursor: pointer;
+    }
+    .active-filter-tag:hover { background: var(--primary-100); }
+    .jobs-grid { display: flex; flex-direction: column; gap: var(--s4); }
+    .job-card-horizontal {
+      background: #fff;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: var(--s5) var(--s6);
+      transition: border-color 200ms, box-shadow 200ms, transform 150ms;
+      cursor: pointer;
+    }
+    .job-card-horizontal:hover {
+      border-color: var(--primary-300);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+    .jch-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s4); margin-bottom: var(--s3); }
+    .jch-title { font-size: var(--fs-lg); font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .jch-company { font-size: var(--fs-sm); color: var(--gray-500); font-weight: 500; }
+    .jch-salary { font-size: var(--fs-xl); font-weight: 800; color: var(--teal-700); white-space: nowrap; }
+    .jch-meta { display: flex; flex-wrap: wrap; gap: var(--s3); font-size: var(--fs-xs); color: var(--gray-600); margin-bottom: var(--s4); align-items: center; }
+    .jch-divider { color: var(--gray-300); }
+    .jch-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--s3); padding: var(--s3) 0 var(--s3); border-top: 1px solid var(--gray-100); border-bottom: 1px solid var(--gray-100); margin-bottom: var(--s3); }
+    .jch-stat-label { font-size: 11px; color: var(--gray-400); font-weight: 500; margin-bottom: 2px; }
+    .jch-stat-value { font-size: var(--fs-xs); font-weight: 700; color: var(--gray-700); }
+    .jch-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s2); }
+    .jch-badges { display: flex; flex-wrap: wrap; gap: var(--s2); }
+    .jch-actions { display: flex; gap: var(--s2); align-items: center; }
+    .boosted-tag { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; padding: 2px 8px; border-radius: var(--radius-full); font-size: 10px; font-weight: 700; }
+    .load-more { text-align: center; padding: var(--s8) 0; }
+    @media (max-width: 900px) {
+      .filters-sidebar { display: none; }
+      .jch-stats { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .jch-stats { grid-template-columns: repeat(2, 1fr); }
+      .jch-salary { font-size: var(--fs-lg); }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="index.html" class="navbar-logo">
+      <div class="navbar-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+      </div>
+      ClearJob
+    </a>
+    <nav class="navbar-nav">
+      <a href="jobs.html" class="active">משרות</a>
+      <a href="index.html#employers">למעסיקים</a>
+      <a href="index.html#how">איך זה עובד</a>
+    </nav>
+    <div class="navbar-actions">
+      <a href="candidate-dashboard.html" class="btn btn-ghost btn-sm">האזור האישי</a>
+      <a href="employer-dashboard.html" class="btn btn-primary btn-sm">פרסם משרה</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container" style="padding-top: var(--s5); padding-bottom: var(--s12);">
+
+  <!-- Search Bar -->
+  <div class="filter-bar">
+    <div class="filter-search" style="flex: 2;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="form-input" id="search-input" placeholder="תפקיד, מיומנות, קטגוריה..." style="padding-right: 40px;">
+    </div>
+    <div class="filter-search" style="flex: 1;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <input type="text" class="form-input" id="location-input" placeholder="עיר, אזור..." style="padding-right: 40px;">
+    </div>
+    <button class="btn btn-primary" onclick="applyFilters()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      חפש
+    </button>
+  </div>
+
+  <!-- Quick Filter Chips -->
+  <div style="display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s5);">
+    <button class="filter-chip active" data-filter="all" onclick="setQuickFilter('all', this)">כל המשרות</button>
+    <button class="filter-chip" data-filter="human" onclick="setQuickFilter('human', this)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      נקראות על ידי אדם
+    </button>
+    <button class="filter-chip" data-filter="noAts" onclick="setQuickFilter('noAts', this)">ללא ATS</button>
+    <button class="filter-chip" data-filter="noAssignment" onclick="setQuickFilter('noAssignment', this)">ללא מטלת בית</button>
+    <button class="filter-chip" data-filter="few" onclick="setQuickFilter('few', this)">פחות מ-100 מועמדים</button>
+    <button class="filter-chip" data-filter="remote" onclick="setQuickFilter('remote', this)">עבודה מרחוק</button>
+    <button class="filter-chip" data-filter="fast" onclick="setQuickFilter('fast', this)">תגובה מהירה</button>
+    <button class="filter-chip" data-filter="fresh" onclick="setQuickFilter('fresh', this)">פורסמו השבוע</button>
+  </div>
+
+  <div class="jobs-layout">
+
+    <!-- Filters Sidebar -->
+    <aside class="filters-sidebar">
+      <div class="filters-header">
+        <span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-left: 4px;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          פילטרים
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()">נקה</button>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">תחום / קטגוריה</div>
+        <label class="filter-option"><input type="checkbox" value="פיתוח תוכנה" onchange="applyFilters()"> פיתוח תוכנה</label>
+        <label class="filter-option"><input type="checkbox" value="מוצר ועיצוב" onchange="applyFilters()"> מוצר ועיצוב</label>
+        <label class="filter-option"><input type="checkbox" value="נתונים ו-BI" onchange="applyFilters()"> נתונים ו-BI</label>
+        <label class="filter-option"><input type="checkbox" value="שיווק ותקשורת" onchange="applyFilters()"> שיווק ותקשורת</label>
+        <label class="filter-option"><input type="checkbox" value="מכירות" onchange="applyFilters()"> מכירות</label>
+        <label class="filter-option"><input type="checkbox" value="כספים וחשבונאות" onchange="applyFilters()"> כספים וחשבונאות</label>
+        <label class="filter-option"><input type="checkbox" value="רכש ולוגיסטיקה" onchange="applyFilters()"> רכש ולוגיסטיקה</label>
+        <label class="filter-option"><input type="checkbox" value="שירות לקוחות" onchange="applyFilters()"> שירות לקוחות</label>
+        <label class="filter-option"><input type="checkbox" value="משאבי אנוש" onchange="applyFilters()"> משאבי אנוש</label>
+        <label class="filter-option"><input type="checkbox" value="תפעול וניהול" onchange="applyFilters()"> תפעול וניהול</label>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">מודל עבודה</div>
+        <label class="filter-option"><input type="checkbox" value="office" name="workModel" onchange="applyFilters()"> משרד מלא</label>
+        <label class="filter-option"><input type="checkbox" value="hybrid" name="workModel" onchange="applyFilters()"> היברידי</label>
+        <label class="filter-option"><input type="checkbox" value="remote" name="workModel" onchange="applyFilters()"> מרחוק</label>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">טווח שכר (₪/חודש)</div>
+        <div class="filter-range">
+          <input type="number" class="form-input" id="salary-min" placeholder="מינימום" style="font-size:var(--fs-xs);" onchange="applyFilters()">
+          <span style="color:var(--gray-400);font-size:var(--fs-xs);">עד</span>
+          <input type="number" class="form-input" id="salary-max" placeholder="מקסימום" style="font-size:var(--fs-xs);" onchange="applyFilters()">
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">רמת ניסיון</div>
+        <label class="filter-option"><input type="checkbox" value="junior" name="expLevel" onchange="applyFilters()"> ג'וניור</label>
+        <label class="filter-option"><input type="checkbox" value="mid" name="expLevel" onchange="applyFilters()"> ניסיון בינוני</label>
+        <label class="filter-option"><input type="checkbox" value="senior" name="expLevel" onchange="applyFilters()"> בכיר</label>
+        <label class="filter-option"><input type="checkbox" value="manager" name="expLevel" onchange="applyFilters()"> מנהל</label>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">שקיפות ותהליך</div>
+        <label class="filter-option"><input type="checkbox" id="filter-human" onchange="applyFilters()"> אדם קורא קורות חיים</label>
+        <label class="filter-option"><input type="checkbox" id="filter-no-ats" onchange="applyFilters()"> ללא ATS</label>
+        <label class="filter-option"><input type="checkbox" id="filter-no-assign" onchange="applyFilters()"> ללא מטלת בית</label>
+        <label class="filter-option"><input type="checkbox" id="filter-fast" onchange="applyFilters()"> תגובה תוך 5 ימים</label>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-section-title">סוג מעסיק</div>
+        <label class="filter-option"><input type="checkbox" value="direct" name="empType" onchange="applyFilters()"> מעסיק ישיר</label>
+        <label class="filter-option"><input type="checkbox" value="agency" name="empType" onchange="applyFilters()"> חברת השמה</label>
+        <label class="filter-option"><input type="checkbox" id="filter-confidential" onchange="applyFilters()"> משרות דיסקרטיות</label>
+      </div>
+
+      <div style="padding: var(--s4) var(--s5);">
+        <button class="btn btn-primary w-full" onclick="applyFilters()">החל פילטרים</button>
+      </div>
+    </aside>
+
+    <!-- Jobs List -->
+    <main class="jobs-main">
+      <div class="results-header">
+        <div class="results-count">מציג <strong id="results-count">12</strong> משרות</div>
+        <select class="sort-select" id="sort-select" onchange="applyFilters()">
+          <option value="date">לפי תאריך (חדש ראשון)</option>
+          <option value="salary-high">לפי שכר (גבוה ראשון)</option>
+          <option value="salary-low">לפי שכר (נמוך ראשון)</option>
+          <option value="applicants">לפי כמות מועמדים</option>
+          <option value="transparency">לפי ציון שקיפות</option>
+        </select>
+      </div>
+
+      <div id="active-filters" class="active-filters"></div>
+
+      <div class="jobs-grid" id="jobs-grid">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="load-more" id="load-more">
+        <button class="btn btn-secondary btn-lg" onclick="loadMore()">טען עוד משרות</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+let activeQuickFilter = 'all';
+let displayedCount = 0;
+const PAGE_SIZE = 8;
+
+function getEmployerDisplay(job) {
+  const emp = getEmployer(job.employerId);
+  if (!emp) return { name: 'חברה', isConfidential: false };
+  if (emp.isConfidential) return { name: `חברה דיסקרטית בתחום ${emp.industry}`, isConfidential: true };
+  return { name: emp.name, isConfidential: false };
+}
+
+function getFilteredJobs() {
+  let jobs = [...JOBS];
+  const searchQ = document.getElementById('search-input').value.toLowerCase().trim();
+  const locationQ = document.getElementById('location-input').value.toLowerCase().trim();
+  const salaryMin = parseFloat(document.getElementById('salary-min').value) || 0;
+  const salaryMax = parseFloat(document.getElementById('salary-max').value) || Infinity;
+
+  const checkedCategories = [...document.querySelectorAll('.filter-section input[type=checkbox][value]:not([name])')].filter(el => el.checked && el.id === '').map(el => el.value);
+  const checkedWorkModels = [...document.querySelectorAll('input[name=workModel]:checked')].map(el => el.value);
+  const checkedExpLevels  = [...document.querySelectorAll('input[name=expLevel]:checked')].map(el => el.value);
+  const checkedEmpTypes   = [...document.querySelectorAll('input[name=empType]:checked')].map(el => el.value);
+
+  const filterHuman   = document.getElementById('filter-human').checked;
+  const filterNoAts   = document.getElementById('filter-no-ats').checked;
+  const filterNoAssign = document.getElementById('filter-no-assign').checked;
+  const filterFast    = document.getElementById('filter-fast').checked;
+  const filterConf    = document.getElementById('filter-confidential').checked;
+
+  // Category checkboxes (those without a name attr)
+  const catBoxes = [...document.querySelectorAll('.filter-section input[type=checkbox]:not([name]):not([id^=filter])')].filter(el => el.checked).map(el => el.value);
+
+  jobs = jobs.filter(j => {
+    if (searchQ && !j.title.toLowerCase().includes(searchQ) && !j.category.toLowerCase().includes(searchQ) && !j.description.toLowerCase().includes(searchQ)) return false;
+    if (locationQ && !j.location.toLowerCase().includes(locationQ)) return false;
+    if (salaryMin && j.salaryMax < salaryMin) return false;
+    if (salaryMax < Infinity && j.salaryMin > salaryMax) return false;
+    if (catBoxes.length && !catBoxes.includes(j.category)) return false;
+    if (checkedWorkModels.length && !checkedWorkModels.includes(j.workModel)) return false;
+    if (checkedExpLevels.length && !checkedExpLevels.includes(j.experienceLevel)) return false;
+    const emp = getEmployer(j.employerId);
+    if (checkedEmpTypes.length && !checkedEmpTypes.includes(emp.employerType)) return false;
+    if (filterHuman && !j.reviewMethod.humanReview) return false;
+    if (filterNoAts && j.reviewMethod.atsReview) return false;
+    if (filterNoAssign && j.hasHomeAssignment) return false;
+    if (filterFast && j.averageResponseDays > 5) return false;
+    if (filterConf && !emp.isConfidential) return false;
+
+    if (activeQuickFilter === 'human' && !j.reviewMethod.humanReview) return false;
+    if (activeQuickFilter === 'noAts' && j.reviewMethod.atsReview) return false;
+    if (activeQuickFilter === 'noAssignment' && j.hasHomeAssignment) return false;
+    if (activeQuickFilter === 'few' && j.applicantCount >= 100) return false;
+    if (activeQuickFilter === 'remote' && j.workModel !== 'remote') return false;
+    if (activeQuickFilter === 'fast' && j.averageResponseDays > 3) return false;
+    if (activeQuickFilter === 'fresh' && daysSince(j.createdAt) > 7) return false;
+
+    return true;
+  });
+
+  const sort = document.getElementById('sort-select').value;
+  if (sort === 'salary-high') jobs.sort((a, b) => b.salaryMax - a.salaryMax);
+  else if (sort === 'salary-low') jobs.sort((a, b) => a.salaryMin - b.salaryMin);
+  else if (sort === 'applicants') jobs.sort((a, b) => a.applicantCount - b.applicantCount);
+  else if (sort === 'transparency') jobs.sort((a, b) => b.transparencyScore - a.transparencyScore);
+  else jobs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  return jobs;
+}
+
+function renderJobs(jobs, append = false) {
+  const grid = document.getElementById('jobs-grid');
+  if (!append) grid.innerHTML = '';
+
+  jobs.forEach(job => {
+    const emp = getEmployer(job.employerId);
+    const { name: companyName, isConfidential } = getEmployerDisplay(job);
+    const isBoosted = job.lastBoostedAt && daysSince(job.lastBoostedAt) <= 2;
+
+    const card = document.createElement('div');
+    card.className = 'job-card-horizontal';
+    card.onclick = () => window.location.href = `job-detail.html?id=${job.id}`;
+
+    const reviewBadges = [];
+    if (job.reviewMethod.humanReview) reviewBadges.push('<span class="badge badge-teal"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>אדם קורא</span>');
+    if (job.reviewMethod.atsReview) reviewBadges.push('<span class="badge badge-primary">ATS</span>');
+    if (job.reviewMethod.aiAssisted) reviewBadges.push('<span class="badge" style="background:#faf5ff;color:#7c3aed;">AI</span>');
+    if (!job.hasHomeAssignment) reviewBadges.push('<span class="badge badge-success">ללא מטלה</span>');
+    else reviewBadges.push('<span class="badge badge-warning">מטלת בית</span>');
+
+    card.innerHTML = `
+      <div class="jch-top">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;margin-bottom:4px;">
+            <div class="jch-title">${job.title}</div>
+            ${isBoosted ? '<span class="boosted-tag">הוקפץ</span>' : ''}
+          </div>
+          <div class="jch-company">
+            ${isConfidential ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-left:3px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>` : ''}
+            ${companyName}
+          </div>
+        </div>
+        <div style="text-align:left;flex-shrink:0;">
+          <div class="jch-salary">${formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</div>
+          ${job.salaryFlexible ? '<div style="font-size:11px;color:var(--gray-400);text-align:left;">גמישות קיימת</div>' : ''}
+        </div>
+      </div>
+
+      <div class="jch-meta">
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-left:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${job.location}</span>
+        <span class="jch-divider">·</span>
+        <span>${WORK_MODEL_LABELS[job.workModel]}${job.workModel === 'hybrid' ? ` (${job.workDaysOffice} ימים)` : ''}</span>
+        <span class="jch-divider">·</span>
+        <span>${EMPLOYMENT_TYPE_LABELS[job.employmentType]}</span>
+        <span class="jch-divider">·</span>
+        <span>${EXPERIENCE_LABELS[job.experienceLevel]}</span>
+        <span class="jch-divider">·</span>
+        <span style="color:var(--gray-400);">עודכן ${formatDate(job.updatedAt)}</span>
+      </div>
+
+      <div class="jch-stats">
+        <div>
+          <div class="jch-stat-label">הגישו מועמדות</div>
+          <div class="jch-stat-value">${job.applicantCount}</div>
+        </div>
+        <div>
+          <div class="jch-stat-label">נצפו</div>
+          <div class="jch-stat-value">${job.viewedApplicantCount}</div>
+        </div>
+        <div>
+          <div class="jch-stat-label">בראיון</div>
+          <div class="jch-stat-value">${job.interviewCount}</div>
+        </div>
+        <div>
+          <div class="jch-stat-label">תגובה ממוצע</div>
+          <div class="jch-stat-value">${job.averageResponseDays} ימים</div>
+        </div>
+        <div>
+          <div class="jch-stat-label">שלבים</div>
+          <div class="jch-stat-value">${job.hiringProcess.length} שלבים</div>
+        </div>
+      </div>
+
+      <div class="jch-bottom">
+        <div class="jch-badges">${reviewBadges.join('')}</div>
+        <div class="jch-actions">
+          <div class="transparency-score" style="font-size:var(--fs-xs);color:var(--teal-600);font-weight:700;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+            ${job.transparencyScore}% שקיפות
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();window.location.href='job-detail.html?id=${job.id}'">פרטים ← הגשה</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function applyFilters() {
+  const jobs = getFilteredJobs();
+  document.getElementById('results-count').textContent = jobs.length;
+  displayedCount = Math.min(PAGE_SIZE, jobs.length);
+  renderJobs(jobs.slice(0, PAGE_SIZE));
+  document.getElementById('load-more').style.display = jobs.length > PAGE_SIZE ? '' : 'none';
+  window._filteredJobs = jobs;
+}
+
+function loadMore() {
+  const jobs = window._filteredJobs || getFilteredJobs();
+  const next = jobs.slice(displayedCount, displayedCount + PAGE_SIZE);
+  renderJobs(next, true);
+  displayedCount += next.length;
+  if (displayedCount >= jobs.length) document.getElementById('load-more').style.display = 'none';
+}
+
+function setQuickFilter(filter, btn) {
+  activeQuickFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function clearFilters() {
+  document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+  document.getElementById('salary-min').value = '';
+  document.getElementById('salary-max').value = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('location-input').value = '';
+  activeQuickFilter = 'all';
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-filter="all"]').classList.add('active');
+  applyFilters();
+}
+
+// Init
+const params = new URLSearchParams(window.location.search);
+if (params.get('q')) document.getElementById('search-input').value = params.get('q');
+applyFilters();
+</script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/mobile.js"></script>
+</body>
+</html>

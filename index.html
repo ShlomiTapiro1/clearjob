@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClearJob — חיפוש עבודה בלי ניחושים</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero-search {
+      background: rgba(255,255,255,.12);
+      border: 1.5px solid rgba(255,255,255,.25);
+      border-radius: var(--radius-xl);
+      padding: var(--s4) var(--s4) var(--s4) var(--s6);
+      display: flex;
+      gap: var(--s3);
+      align-items: center;
+      backdrop-filter: blur(8px);
+      max-width: 640px;
+      margin: 0 auto var(--s6);
+    }
+    .hero-search input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: var(--fs-md);
+      font-family: var(--font);
+    }
+    .hero-search input::placeholder { color: rgba(255,255,255,.6); }
+    .hero-search-divider { width: 1px; height: 24px; background: rgba(255,255,255,.3); }
+    .sample-jobs { padding: var(--s16) 0; background: var(--gray-50); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s10); align-items: center; padding: var(--s16) 0; }
+    .col-visual { background: linear-gradient(135deg, var(--primary-50), var(--teal-50)); border-radius: var(--radius-xl); padding: var(--s8); }
+    .mock-card { background: #fff; border-radius: var(--radius-lg); border: 1.5px solid var(--gray-200); padding: var(--s5); margin-bottom: var(--s3); box-shadow: var(--shadow-sm); }
+    .mock-card:last-child { margin-bottom: 0; }
+    .mock-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s2); }
+    .mock-title { font-weight: 700; color: var(--gray-800); font-size: var(--fs-sm); }
+    .mock-salary { font-weight: 700; color: var(--teal-600); font-size: var(--fs-sm); }
+    .mock-stat-row { display: flex; gap: var(--s3); margin-top: var(--s3); flex-wrap: wrap; }
+    .mock-stat { font-size: 11px; color: var(--gray-500); display: flex; align-items: center; gap: 3px; }
+    .how-section { padding: var(--s16) 0; background: #fff; }
+    .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s6); }
+    .step-card { text-align: center; padding: var(--s6); }
+    .step-num-large { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-500), var(--teal-500)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: var(--fs-xl); font-weight: 800; margin: 0 auto var(--s4); }
+    .step-title { font-size: var(--fs-md); font-weight: 700; color: var(--gray-900); margin-bottom: var(--s2); }
+    .step-desc { font-size: var(--fs-sm); color: var(--gray-500); line-height: 1.7; }
+    .employers-section { padding: var(--s16) 0; background: linear-gradient(135deg, var(--primary-700), var(--teal-700)); }
+    .employers-section .section-title { color: #fff; }
+    .employers-section .section-desc { color: rgba(255,255,255,.75); }
+    .employer-benefit { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--s4); background: rgba(255,255,255,.1); border-radius: var(--radius-lg); }
+    .employer-benefit-icon { width: 40px; height: 40px; background: rgba(255,255,255,.15); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
+    .employer-benefit-text strong { display: block; color: #fff; font-size: var(--fs-sm); font-weight: 600; margin-bottom: 2px; }
+    .employer-benefit-text span { font-size: var(--fs-xs); color: rgba(255,255,255,.7); }
+    .cta-section { padding: var(--s16) 0; text-align: center; background: var(--gray-50); }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="index.html" class="navbar-logo">
+      <div class="navbar-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+      </div>
+      ClearJob
+    </a>
+    <nav class="navbar-nav">
+      <a href="jobs.html">משרות</a>
+      <a href="index.html#employers">למעסיקים</a>
+      <a href="index.html#how">איך זה עובד</a>
+      <a href="index.html">אודות</a>
+    </nav>
+    <div class="navbar-actions">
+      <a href="candidate-dashboard.html" class="btn btn-ghost btn-sm">כניסה</a>
+      <a href="employer-dashboard.html" class="btn btn-primary btn-sm">פרסם משרה</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-tag">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      שקיפות מלאה — לשני הצדדים
+    </div>
+    <h1>חיפוש עבודה<br>בלי ניחושים</h1>
+    <p>גלו מראש שכר, כמות מועמדים, תהליך גיוס, סטטוס מועמדות ואיך קורות החיים שלכם ייבדקו.</p>
+
+    <div class="hero-search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="תפקיד, קטגוריה, מיומנות..." id="hero-search-input">
+      <div class="hero-search-divider"></div>
+      <input type="text" placeholder="מיקום" style="flex: 0.5;">
+      <a href="jobs.html" class="btn btn-white" id="hero-search-btn">חיפוש</a>
+    </div>
+
+    <div class="hero-cta">
+      <a href="jobs.html" class="btn btn-white btn-lg">חפש משרות שקופות</a>
+      <a href="#employers" class="btn btn-outline-white btn-lg">למעסיקים</a>
+    </div>
+  </div>
+</section>
+
+<!-- Trust Stats -->
+<div class="trust-bar">
+  <div class="container trust-bar-inner">
+    <div class="trust-item">
+      <div class="trust-num">1,240+</div>
+      <div class="trust-text">משרות שקופות</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-num">94%</div>
+      <div class="trust-text">שכר גלוי בכל משרה</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-num">3.8 ימים</div>
+      <div class="trust-text">זמן תגובה ממוצע</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-num">87%</div>
+      <div class="trust-text">מועמדים מקבלים תשובה</div>
+    </div>
+  </div>
+</div>
+
+<!-- Features Section -->
+<section class="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">למה ClearJob שונה?</span>
+      <h2 class="section-title">כל המידע שתמיד רציתם לדעת — לפני שמגישים</h2>
+      <p class="section-desc">אנחנו הופכים את חיפוש העבודה ממסע בחשכה — לתהליך ברור, מדיד ומכבד.</p>
+    </div>
+    <div class="grid grid-3 gap-4" style="gap: var(--s4);">
+      <div class="feature-card">
+        <div class="feature-icon blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="feature-title">שכר גלוי בכל משרה</div>
+        <div class="feature-desc">אין יותר "בהתאם לניסיון". כל משרה מציגה טווח שכר ברור, כולל בונוסים, קרן השתלמות ותנאים נוספים.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon teal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="feature-title">סטטוס מועמדות בזמן אמת</div>
+        <div class="feature-desc">דעו בדיוק מה קורה עם קורות החיים שלכם — האם נפתחו, מי קרא אותם, ומה השלב הבא.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="feature-title">כמות מגישים גלויה</div>
+        <div class="feature-desc">ראו כמה אנשים כבר הגישו, כמה קורות חיים נצפו, וכמה עברו לשלב הבא — לפני שמגישים.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon purple">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <div class="feature-title">גילוי שיטת הסינון</div>
+        <div class="feature-desc">דעו מראש אם קורות החיים שלכם ייבדקו על ידי אדם, ATS או AI — בלי הפתעות.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon orange">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="feature-title">תהליך גיוס ברור מראש</div>
+        <div class="feature-desc">כל משרה מציגה כמה שלבים יש, מה קורה בכל שלב, ומה הזמן הצפוי עד לסיום התהליך.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon teal" style="background: var(--gray-100); color: var(--gray-600);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="feature-title">דיסקרטיות לשני הצדדים</div>
+        <div class="feature-desc">מועמדים יכולים לחפש בדיסקרטיות. מעסיקים יכולים לפרסם משרות בלי לחשוף את שם החברה.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Sample Jobs -->
+<section class="sample-jobs">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">משרות לדוגמה</span>
+      <h2 class="section-title">כך נראית שקיפות אמיתית</h2>
+    </div>
+    <div class="grid grid-auto" style="gap: var(--s4);" id="sample-jobs-grid">
+      <!-- Rendered by JS -->
+    </div>
+    <div style="text-align: center; margin-top: var(--s8);">
+      <a href="jobs.html" class="btn btn-primary btn-lg">צפה בכל המשרות</a>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-section" id="how">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">איך זה עובד?</span>
+      <h2 class="section-title">תהליך פשוט, תוצאות ברורות</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num-large">1</div>
+        <div class="step-title">חפש משרות שקופות</div>
+        <div class="step-desc">סנן לפי שכר, מיקום, מודל עבודה, שיטת סינון ועוד. רק משרות עם מידע ברור.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num-large">2</div>
+        <div class="step-title">קרא את כרטיס השקיפות</div>
+        <div class="step-desc">בכל משרה: שכר מלא, כמות מגישים, תהליך גיוס, שיטת סינון. לא חור שחור.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num-large">3</div>
+        <div class="step-title">עקוב אחרי הסטטוס</div>
+        <div class="step-desc">לאחר הגשה — קבלו Timeline ברור של מה קורה עם קורות החיים שלכם, בזמן אמת.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Employers Section -->
+<section class="employers-section" id="employers">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag" style="background: rgba(255,255,255,.15); color: #fff;">למעסיקים</span>
+      <h2 class="section-title">קבלו פחות קורות חיים — ויותר מועמדים שמתאימים</h2>
+      <p class="section-desc">פרסמו משרות שקופות, נהלו מועמדים בקלות, שמרו על דיסקרטיות כשצריך.</p>
+    </div>
+    <div class="grid grid-2" style="gap: var(--s4); margin-bottom: var(--s8);">
+      <div class="employer-benefit">
+        <div class="employer-benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="employer-benefit-text">
+          <strong>מועמדים רציניים יותר</strong>
+          <span>מועמד שמגיש אחרי שראה שכר ותהליך — בא עם כוונה</span>
+        </div>
+      </div>
+      <div class="employer-benefit">
+        <div class="employer-benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="employer-benefit-text">
+          <strong>פרסום דיסקרטי מלא</strong>
+          <span>גייסו בלי לחשוף את שם החברה, עם שקיפות מלאה לגבי התפקיד</span>
+        </div>
+      </div>
+      <div class="employer-benefit">
+        <div class="employer-benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <div class="employer-benefit-text">
+          <strong>מערכת ניהול מועמדים</strong>
+          <span>Kanban מובנה, עדכוני סטטוס, ניהול פשוט בלי ATS יקר</span>
+        </div>
+      </div>
+      <div class="employer-benefit">
+        <div class="employer-benefit-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="employer-benefit-text">
+          <strong>דאטה שימושי</strong>
+          <span>ראו היכן מועמדים נושרים, האם השכר נמוך מדי, כמה זמן לוקח לגיס</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align: center;">
+      <a href="employer-dashboard.html" class="btn btn-white btn-lg">התחל לפרסם משרות</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="container" style="max-width: 600px;">
+    <div class="section-tag" style="display: inline-block;">מוכן/ה להתחיל?</div>
+    <h2 class="section-title" style="margin-top: var(--s3);">הצטרפו למאות מחפשי עבודה שכבר מוצאים משרות בשקיפות</h2>
+    <p class="section-desc" style="margin-bottom: var(--s8);">בלי ניחושים. בלי חורים שחורים. רק עבודה ברורה, הוגנת, ומכבדת.</p>
+    <div style="display: flex; gap: var(--s4); justify-content: center; flex-wrap: wrap;">
+      <a href="jobs.html" class="btn btn-primary btn-lg">חפש משרות עכשיו</a>
+      <a href="candidate-dashboard.html" class="btn btn-secondary btn-lg">צור פרופיל מועמד</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">ClearJob</div>
+        <div class="footer-desc">פלטפורמת דרושים שמחזירה למועמד את השליטה, ולמעסיק את האיכות.</div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">למועמדים</div>
+        <a href="jobs.html">חיפוש משרות</a>
+        <a href="candidate-dashboard.html">האזור האישי</a>
+        <a href="#">צור פרופיל</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">למעסיקים</div>
+        <a href="employer-dashboard.html">דשבורד מעסיק</a>
+        <a href="create-job.html">פרסם משרה</a>
+        <a href="#">תמחור</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">כללי</div>
+        <a href="#">אודות</a>
+        <a href="#">צור קשר</a>
+        <a href="#">מדיניות פרטיות</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ClearJob. כל הזכויות שמורות.</span>
+      <span>שקיפות • הוגנות • כבוד</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script>
+  // Render sample job cards on homepage
+  const WORK_ICONS = { hybrid: '🏢↔🏠', office: '🏢', remote: '🏠' };
+  const grid = document.getElementById('sample-jobs-grid');
+
+  const sampleIds = ['job1', 'job2', 'job6', 'job8'];
+  sampleIds.forEach(id => {
+    const job = getJob(id);
+    const emp = getEmployer(job.employerId);
+    const days = daysSince(job.createdAt);
+    const companyName = emp.isConfidential ? `חברה דיסקרטית בתחום ${emp.industry}` : emp.name;
+
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.onclick = () => window.location.href = `job-detail.html?id=${job.id}`;
+    card.innerHTML = `
+      <div class="job-card-header">
+        <div>
+          <div class="job-card-title">${job.title}</div>
+          <div class="job-card-company">${companyName}</div>
+        </div>
+        ${emp.isConfidential ? '<span class="confidential-banner"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> דיסקרטי</span>' : ''}
+      </div>
+      <div class="job-card-meta">
+        <span class="job-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${job.location}</span>
+        <span>·</span>
+        <span>${WORK_MODEL_LABELS[job.workModel]}</span>
+        <span>·</span>
+        <span>${EMPLOYMENT_TYPE_LABELS[job.employmentType]}</span>
+      </div>
+      <div class="job-salary">${formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</div>
+      <div class="job-card-stats">
+        <div class="job-stat">
+          <span class="job-stat-label">הגישו</span>
+          <span class="job-stat-value">${job.applicantCount} מועמדים</span>
+        </div>
+        <div class="job-stat">
+          <span class="job-stat-label">נצפו</span>
+          <span class="job-stat-value">${job.viewedApplicantCount}</span>
+        </div>
+        <div class="job-stat">
+          <span class="job-stat-label">תגובה ממוצע</span>
+          <span class="job-stat-value">${job.averageResponseDays} ימים</span>
+        </div>
+        <div class="job-stat">
+          <span class="job-stat-label">שלבים</span>
+          <span class="job-stat-value">${job.hiringProcess.length} שלבים</span>
+        </div>
+      </div>
+      <div class="job-card-footer">
+        <div style="display:flex;gap:var(--s2);flex-wrap:wrap;">
+          ${job.reviewMethod.humanReview ? '<span class="badge badge-teal">אדם קורא</span>' : ''}
+          ${job.reviewMethod.atsReview ? '<span class="badge badge-primary">ATS</span>' : ''}
+          ${job.hasHomeAssignment ? '<span class="badge badge-warning">מטלת בית</span>' : '<span class="badge badge-success">ללא מטלה</span>'}
+        </div>
+        <div class="transparency-score">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          ${job.transparencyScore}% שקיפות
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Hero search redirect
+  document.getElementById('hero-search-btn').addEventListener('click', (e) => {
+    const q = document.getElementById('hero-search-input').value;
+    if (q) { e.preventDefault(); window.location.href = `jobs.html?q=${encodeURIComponent(q)}`; }
+  });
+</script>
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/db.js"></script>
+<script src="js/mobile.js"></script>
+</body>
+</html>

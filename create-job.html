@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>פרסום משרה — ClearJob</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .create-layout { max-width: 860px; margin: 0 auto; padding: var(--s6) var(--s4) var(--s12); }
+
+    /* Steps Bar */
+    .steps-bar {
+      background: #fff; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-xl); padding: var(--s5) var(--s6);
+      margin-bottom: var(--s6);
+      overflow-x: auto;
+    }
+    .steps-bar-inner { display: flex; align-items: center; min-width: max-content; }
+    .step-item { display: flex; align-items: center; gap: var(--s2); flex-shrink: 0; }
+    .step-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--fs-xs); font-weight: 800;
+      background: var(--gray-100); color: var(--gray-500);
+      transition: all var(--transition-md); flex-shrink: 0;
+    }
+    .step-circle.active { background: var(--primary-600); color: #fff; box-shadow: 0 0 0 4px var(--primary-100); }
+    .step-circle.done   { background: var(--teal-600); color: #fff; }
+    .step-text { font-size: var(--fs-xs); font-weight: 600; color: var(--gray-400); white-space: nowrap; }
+    .step-text.active { color: var(--primary-700); }
+    .step-text.done   { color: var(--teal-700); }
+    .step-connector-line { flex: 0 0 40px; height: 2px; background: var(--gray-200); margin: 0 var(--s2); transition: background var(--transition-md); }
+    .step-connector-line.done { background: var(--teal-400); }
+
+    /* Form Card */
+    .form-card {
+      background: #fff; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-xl); overflow: hidden;
+    }
+    .form-card-header {
+      padding: var(--s5) var(--s7);
+      border-bottom: 1px solid var(--gray-200);
+      background: linear-gradient(135deg, var(--primary-50), #fff);
+      display: flex; align-items: center; gap: var(--s3);
+    }
+    .form-card-header-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-lg);
+      background: var(--primary-600); color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .form-card-title { font-size: var(--fs-xl); font-weight: 800; color: var(--gray-900); }
+    .form-card-subtitle { font-size: var(--fs-xs); color: var(--gray-500); margin-top: 2px; }
+    .form-card-body { padding: var(--s7); display: flex; flex-direction: column; gap: var(--s5); }
+    .form-card-footer {
+      padding: var(--s5) var(--s7);
+      border-top: 1px solid var(--gray-200);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* Grid helpers */
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--s4); }
+
+    /* Confidentiality Cards */
+    .conf-option {
+      border: 2px solid var(--gray-200); border-radius: var(--radius-lg);
+      padding: var(--s5); cursor: pointer; transition: all var(--transition);
+    }
+    .conf-option:hover { border-color: var(--primary-300); background: var(--primary-50); }
+    .conf-option.selected { border-color: var(--primary-500); background: var(--primary-50); }
+    .conf-option-icon { width: 40px; height: 40px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; margin-bottom: var(--s3); }
+    .conf-option-title { font-weight: 700; font-size: var(--fs-sm); color: var(--gray-800); margin-bottom: var(--s1); }
+    .conf-option-desc { font-size: var(--fs-xs); color: var(--gray-500); line-height: 1.6; }
+
+    /* Process Steps Editor */
+    .process-step-item {
+      background: var(--gray-50); border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-lg); padding: var(--s4);
+      display: flex; align-items: flex-start; gap: var(--s3);
+    }
+    .ps-drag-handle { color: var(--gray-400); cursor: grab; margin-top: 4px; flex-shrink: 0; }
+    .ps-num-badge { width: 28px; height: 28px; border-radius: 50%; background: var(--primary-100); color: var(--primary-700); font-size: var(--fs-xs); font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* Screening Questions */
+    .sq-item {
+      background: var(--gray-50); border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-lg); padding: var(--s4);
+      display: flex; align-items: center; gap: var(--s3);
+    }
+
+    /* Preview */
+    .preview-section { margin-bottom: var(--s5); }
+    .preview-section-title { font-size: var(--fs-xs); font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: .05em; margin-bottom: var(--s3); }
+    .preview-row { display: flex; gap: var(--s3); font-size: var(--fs-sm); padding: 5px 0; border-bottom: 1px solid var(--gray-100); }
+    .preview-row:last-child { border-bottom: none; }
+    .preview-label { color: var(--gray-500); min-width: 140px; flex-shrink: 0; }
+    .preview-val { color: var(--gray-800); font-weight: 600; }
+
+    /* Alert box */
+    .salary-alert { display: none; margin-top: var(--s2); }
+    .salary-alert.show { display: flex; }
+
+    @media (max-width: 640px) { .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container navbar-inner">
+    <a href="index.html" class="navbar-logo">
+      <div class="navbar-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+      </div>
+      ClearJob
+    </a>
+    <nav class="navbar-nav">
+      <a href="employer-dashboard.html">דשבורד</a>
+      <a href="create-job.html" class="active">פרסום משרה</a>
+    </nav>
+    <div class="navbar-actions">
+      <a href="employer-dashboard.html" class="btn btn-ghost btn-sm">← חזרה לדשבורד</a>
+    </div>
+  </div>
+</nav>
+
+<div class="create-layout">
+
+  <!-- Steps Bar -->
+  <div class="steps-bar">
+    <div class="steps-bar-inner" id="steps-bar"></div>
+  </div>
+
+  <!-- Form Steps -->
+  <div id="step-forms">
+    <!-- Rendered by JS -->
+  </div>
+
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/data.js"></script>
+<script>
+const STEPS = [
+  { num: 1, label: 'פרטי תפקיד' },
+  { num: 2, label: 'שכר ותנאים' },
+  { num: 3, label: 'תהליך גיוס' },
+  { num: 4, label: 'בדיקת מועמדים' },
+  { num: 5, label: 'דיסקרטיות' },
+  { num: 6, label: 'שאלות סינון' },
+  { num: 7, label: 'תצוגה מקדימה' }
+];
+
+let currentStep = 1;
+let formData = {
+  title: '', category: '', description: '', responsibilities: '', mustHave: '', niceToHave: '',
+  experienceLevel: 'mid', employmentType: 'fullTime', location: '', workModel: 'hybrid', workDays: 3,
+  salaryMin: '', salaryMax: '', salaryType: 'monthly', salaryFlexible: false, includesBonus: false,
+  includesStudyFund: false, includesCar: false, includesMeals: false, includesOptions: false,
+  processSteps: [
+    { title: 'שיחת HR', desc: 'שיחת מיון ראשונית', minutes: 20, role: 'HR' },
+    { title: 'ראיון מקצועי', desc: 'ראיון עם מנהל ישיר', minutes: 45, role: 'מנהל ישיר' }
+  ],
+  hasAssignment: false, assignHours: '', assignPaid: false,
+  humanReview: true, atsReview: false, aiAssisted: false, screeningQuestions: false,
+  confidentialityLevel: 'none',
+  questions: []
+};
+
+function renderStepsBar() {
+  const bar = document.getElementById('steps-bar');
+  bar.innerHTML = '';
+  STEPS.forEach((s, i) => {
+    const isDone = s.num < currentStep;
+    const isActive = s.num === currentStep;
+    const div = document.createElement('div');
+    div.className = 'step-item';
+    div.innerHTML = `
+      <div class="step-circle ${isDone ? 'done' : isActive ? 'active' : ''}">
+        ${isDone ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : s.num}
+      </div>
+      <span class="step-text ${isDone ? 'done' : isActive ? 'active' : ''}">${s.label}</span>
+    `;
+    if (isDone) div.style.cursor = 'pointer';
+    if (isDone) div.onclick = () => goToStep(s.num);
+    bar.appendChild(div);
+    if (i < STEPS.length - 1) {
+      const line = document.createElement('div');
+      line.className = `step-connector-line ${isDone ? 'done' : ''}`;
+      bar.appendChild(line);
+    }
+  });
+}
+
+function renderStep(n) {
+  const container = document.getElementById('step-forms');
+  container.innerHTML = '';
+  const html = STEP_RENDERS[n]();
+  container.innerHTML = html;
+  bindStepEvents(n);
+}
+
+const STEP_RENDERS = {
+  1: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <div><div class="form-card-title">פרטי התפקיד</div><div class="form-card-subtitle">הגדירו את התפקיד בצורה ברורה — ככל שהמידע שלם יותר, כך מועמדים רלוונטיים יותר יגישו</div></div>
+      </div>
+      <div class="form-card-body">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">שם התפקיד <span class="form-required">*</span></label>
+            <input type="text" class="form-input" id="f-title" placeholder="לדוגמה: מנהל/ת שיווק" value="${formData.title}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">קטגוריה <span class="form-required">*</span></label>
+            <select class="form-select" id="f-category">
+              <option value="">בחר קטגוריה...</option>
+              <option ${formData.category==='פיתוח תוכנה'?'selected':''}>פיתוח תוכנה</option>
+              <option ${formData.category==='מוצר ועיצוב'?'selected':''}>מוצר ועיצוב</option>
+              <option ${formData.category==='שיווק ותקשורת'?'selected':''}>שיווק ותקשורת</option>
+              <option ${formData.category==='מכירות'?'selected':''}>מכירות</option>
+              <option ${formData.category==='כספים וחשבונאות'?'selected':''}>כספים וחשבונאות</option>
+              <option ${formData.category==='רכש ולוגיסטיקה'?'selected':''}>רכש ולוגיסטיקה</option>
+              <option ${formData.category==='שירות לקוחות'?'selected':''}>שירות לקוחות</option>
+              <option ${formData.category==='משאבי אנוש'?'selected':''}>משאבי אנוש</option>
+              <option ${formData.category==='תפעול וניהול'?'selected':''}>תפעול וניהול</option>
+              <option ${formData.category==='נתונים ו-BI'?'selected':''}>נתונים ו-BI</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">תיאור התפקיד <span class="form-required">*</span></label>
+          <textarea class="form-textarea" id="f-desc" rows="5" placeholder="תאר את התפקיד, הצוות וסביבת העבודה...">${formData.description}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">תחומי אחריות</label>
+          <textarea class="form-textarea" id="f-resp" rows="4" placeholder="כל אחריות בשורה חדשה...">${formData.responsibilities}</textarea>
+          <div class="form-hint">כל שורה תהפוך לנקודה נפרדת</div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">דרישות חובה <span class="form-required">*</span></label>
+            <textarea class="form-textarea" id="f-must" rows="4" placeholder="כל דרישה בשורה חדשה...">${formData.mustHave}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">דרישות יתרון</label>
+            <textarea class="form-textarea" id="f-nice" rows="4" placeholder="כל יתרון בשורה חדשה...">${formData.niceToHave}</textarea>
+          </div>
+        </div>
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label">רמת ניסיון</label>
+            <select class="form-select" id="f-exp">
+              <option value="junior" ${formData.experienceLevel==='junior'?'selected':''}>ג'וניור</option>
+              <option value="mid" ${formData.experienceLevel==='mid'?'selected':''}>בינוני</option>
+              <option value="senior" ${formData.experienceLevel==='senior'?'selected':''}>בכיר</option>
+              <option value="manager" ${formData.experienceLevel==='manager'?'selected':''}>מנהל</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">סוג משרה</label>
+            <select class="form-select" id="f-emptype">
+              <option value="fullTime">משרה מלאה</option>
+              <option value="partTime">משרה חלקית</option>
+              <option value="freelance">פרילנס</option>
+              <option value="temporary">זמנית</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">מיקום</label>
+            <input type="text" class="form-input" id="f-loc" placeholder="עיר" value="${formData.location}">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">מודל עבודה</label>
+            <select class="form-select" id="f-workmodel">
+              <option value="office">משרד מלא</option>
+              <option value="hybrid" selected>היברידי</option>
+              <option value="remote">מרחוק</option>
+            </select>
+          </div>
+          <div class="form-group" id="workdays-group">
+            <label class="form-label">ימים במשרד (היברידי)</label>
+            <input type="number" class="form-input" id="f-workdays" min="1" max="5" value="${formData.workDays}">
+          </div>
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <span style="font-size:var(--fs-xs);color:var(--gray-400);">שלב 1 מתוך 7</span>
+        <button class="btn btn-primary" onclick="nextStep(1)">הבא — שכר ותנאים →</button>
+      </div>
+    </div>`,
+
+  2: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon" style="background:var(--teal-600);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div><div class="form-card-title">שכר ותנאים</div><div class="form-card-subtitle">שכר הוא שדה חובה — שקיפות בשכר מביאה מועמדים רציניים יותר</div></div>
+      </div>
+      <div class="form-card-body">
+        <div class="alert alert-info" style="font-size:var(--fs-xs);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/></svg>
+          לא ניתן לפרסם משרה ללא טווח שכר. זהו עקרון הליבה של ClearJob.
+        </div>
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label">שכר מינימום (₪) <span class="form-required">*</span></label>
+            <input type="number" class="form-input" id="f-salmin" placeholder="15000" value="${formData.salaryMin}" oninput="checkSalaryRange()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">שכר מקסימום (₪) <span class="form-required">*</span></label>
+            <input type="number" class="form-input" id="f-salmax" placeholder="22000" value="${formData.salaryMax}" oninput="checkSalaryRange()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">סוג שכר</label>
+            <select class="form-select" id="f-saltype">
+              <option value="monthly">חודשי</option>
+              <option value="hourly">שעתי</option>
+              <option value="basePlusCommission">בסיס + עמלות</option>
+            </select>
+          </div>
+        </div>
+        <div class="alert alert-warning salary-alert" id="salary-warning" style="font-size:var(--fs-xs);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          טווח השכר רחב מדי ועלול לפגוע באמון המועמדים. מומלץ לצמצם את הטווח.
+        </div>
+        <div style="display:flex;gap:var(--s4);flex-wrap:wrap;">
+          <label class="filter-option"><input type="checkbox" id="f-flexible" ${formData.salaryFlexible?'checked':''}> גמישות בשכר</label>
+          <label class="filter-option"><input type="checkbox" id="f-bonus" ${formData.includesBonus?'checked':''}> בונוס</label>
+          <label class="filter-option"><input type="checkbox" id="f-study" ${formData.includesStudyFund?'checked':''}> קרן השתלמות</label>
+          <label class="filter-option"><input type="checkbox" id="f-car" ${formData.includesCar?'checked':''}> רכב</label>
+          <label class="filter-option"><input type="checkbox" id="f-meals" ${formData.includesMeals?'checked':''}> ארוחות</label>
+          <label class="filter-option"><input type="checkbox" id="f-options" ${formData.includesOptions?'checked':''}> אופציות</label>
+        </div>
+        <div class="form-group">
+          <label class="form-label">הערות שכר (אופציונלי)</label>
+          <input type="text" class="form-input" id="f-salnotes" placeholder="לדוגמה: גמישות קיימת למועמד/ת חזק/ה">
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <button class="btn btn-ghost" onclick="prevStep()">← חזרה</button>
+        <button class="btn btn-primary" onclick="nextStep(2)">הבא — תהליך גיוס →</button>
+      </div>
+    </div>`,
+
+  3: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon" style="background:#7c3aed;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div><div class="form-card-title">תהליך הגיוס</div><div class="form-card-subtitle">מועמדים שיודעים מה מחכה להם — פחות נושרים מהתהליך</div></div>
+      </div>
+      <div class="form-card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--s3);" id="process-steps-list">
+          ${formData.processSteps.map((s, i) => renderProcessStep(s, i)).join('')}
+        </div>
+        <button class="btn btn-secondary" onclick="addProcessStep()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          הוסף שלב
+        </button>
+        <hr class="divider">
+        <div class="form-group">
+          <label class="form-label">מטלת בית</label>
+          <div style="display:flex;gap:var(--s4);flex-wrap:wrap;">
+            <label class="filter-option"><input type="radio" name="assignment" value="no" ${!formData.hasAssignment?'checked':''} onchange="toggleAssignment(false)"> אין מטלת בית</label>
+            <label class="filter-option"><input type="radio" name="assignment" value="yes" ${formData.hasAssignment?'checked':''} onchange="toggleAssignment(true)"> יש מטלת בית</label>
+          </div>
+        </div>
+        <div id="assignment-details" style="display:${formData.hasAssignment?'grid':'none'};grid-template-columns:1fr 1fr;gap:var(--s4);">
+          <div class="form-group"><label class="form-label">זמן משוער (שעות)</label><input type="number" class="form-input" id="f-asshours" value="${formData.assignHours}" placeholder="2"></div>
+          <div class="form-group" style="display:flex;align-items:flex-end;"><label class="filter-option"><input type="checkbox" id="f-asspaid" ${formData.assignPaid?'checked':''}> מטלה בתשלום</label></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">זמן תהליך משוער</label>
+          <div style="display:flex;gap:var(--s3);align-items:center;">
+            <input type="number" class="form-input" id="f-proctime" placeholder="14" style="max-width:100px;">
+            <span style="font-size:var(--fs-sm);color:var(--gray-500);">עד</span>
+            <input type="number" class="form-input" id="f-proctime2" placeholder="21" style="max-width:100px;">
+            <span style="font-size:var(--fs-sm);color:var(--gray-500);">ימים</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <button class="btn btn-ghost" onclick="prevStep()">← חזרה</button>
+        <button class="btn btn-primary" onclick="nextStep(3)">הבא — בדיקת מועמדים →</button>
+      </div>
+    </div>`,
+
+  4: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon" style="background:var(--info);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div><div class="form-card-title">שיטת בדיקת קורות חיים</div><div class="form-card-subtitle">שקיפות בשיטת הסינון בונה אמון עם המועמדים</div></div>
+      </div>
+      <div class="form-card-body">
+        <div class="alert alert-info" style="font-size:var(--fs-xs);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/></svg>
+          חובה לציין לפחות שיטת בדיקה אחת. מועמדים רואים מידע זה לפני הגשת מועמדות.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);">
+          <div class="conf-option ${formData.humanReview?'selected':''}" onclick="toggleReview('human', this)">
+            <div class="conf-option-icon" style="background:var(--teal-50);color:var(--teal-600);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="conf-option-title">אדם קורא את קורות החיים</div>
+            <div class="conf-option-desc">מגייס אנושי בוחן כל קורות חיים. הגישה האמינה ביותר בעיני מועמדים.</div>
+          </div>
+          <div class="conf-option ${formData.atsReview?'selected':''}" onclick="toggleReview('ats', this)">
+            <div class="conf-option-icon" style="background:var(--primary-50);color:var(--primary-600);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </div>
+            <div class="conf-option-title">ATS — סינון אוטומטי ראשוני</div>
+            <div class="conf-option-desc">מערכת ATS מסננת קורות חיים לפני שמגיעים לאדם. מהיר אך יש מועמדים שחוששים.</div>
+          </div>
+          <div class="conf-option ${formData.aiAssisted?'selected':''}" onclick="toggleReview('ai', this)">
+            <div class="conf-option-icon" style="background:#faf5ff;color:#7c3aed;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 16v-4M12 8h.01"/></svg>
+            </div>
+            <div class="conf-option-title">AI מסייע בדירוג</div>
+            <div class="conf-option-desc">כלי AI מדרג ומציין מועמדים פוטנציאלים, אך אדם מקבל ההחלטה הסופית.</div>
+          </div>
+          <div class="conf-option" onclick="toggleReview('screening', this)">
+            <div class="conf-option-icon" style="background:var(--warning-bg);color:var(--warning);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="conf-option-title">שאלון מקדים משפיע</div>
+            <div class="conf-option-desc">שאלות סינון ישפיעו על קבלת קורות החיים לבדיקה.</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">יעד זמן תגובה (ימים)</label>
+          <input type="number" class="form-input" placeholder="5" style="max-width:120px;" id="f-resptime">
+          <div class="form-hint">כמה ימים לוקח לכם בממוצע לחזור למועמד? (יוצג בפרופיל שלכם)</div>
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <button class="btn btn-ghost" onclick="prevStep()">← חזרה</button>
+        <button class="btn btn-primary" onclick="nextStep(4)">הבא — דיסקרטיות →</button>
+      </div>
+    </div>`,
+
+  5: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon" style="background:var(--gray-700);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div><div class="form-card-title">רמת דיסקרטיות</div><div class="form-card-subtitle">בחרו עד כמה לחשוף את שם החברה. גם במצב דיסקרטי — שכר ותהליך חייבים להישאר גלויים</div></div>
+      </div>
+      <div class="form-card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--s4);">
+          <div class="conf-option ${formData.confidentialityLevel==='none'?'selected':''}" onclick="selectConf('none', this)">
+            <div style="display:flex;align-items:center;gap:var(--s3);">
+              <div class="conf-option-icon" style="background:var(--success-bg);color:var(--success);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <div>
+                <div class="conf-option-title">רמה 1 — גלוי מלא</div>
+                <div class="conf-option-desc">שם החברה, לוגו ופרטים מלאים גלויים לכל המועמדים. מגדיל אמון ומספר הגשות.</div>
+              </div>
+            </div>
+          </div>
+          <div class="conf-option ${formData.confidentialityLevel==='partial'?'selected':''}" onclick="selectConf('partial', this)">
+            <div style="display:flex;align-items:center;gap:var(--s3);">
+              <div class="conf-option-icon" style="background:var(--warning-bg);color:var(--warning);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <div class="conf-option-title">רמה 2 — דיסקרטי חלקי</div>
+                <div class="conf-option-desc">שם החברה מוסתר, אך תחום, גודל ואזור גלויים. שם החברה ייחשף לאחר שהמעסיק בוחר להתקדם עם המועמד.</div>
+              </div>
+            </div>
+          </div>
+          <div class="conf-option ${formData.confidentialityLevel==='full'?'selected':''}" onclick="selectConf('full', this)">
+            <div style="display:flex;align-items:center;gap:var(--s3);">
+              <div class="conf-option-icon" style="background:var(--error-bg);color:var(--error);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div>
+                <div class="conf-option-title">רמה 3 — דיסקרטי מלא</div>
+                <div class="conf-option-desc">מידע מזהה מינימלי. שם החברה ייחשף רק לאחר אישור ידני שלכם. מתאים לתפקידים רגישים.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-success" style="font-size:var(--fs-xs);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          <div><strong>עיקרון ClearJob:</strong> גם במצב דיסקרטי — שכר, מיקום כללי, מודל עבודה, תהליך גיוס ושיטת סינון <strong>חייבים להיות גלויים</strong> לכל המועמדים.</div>
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <button class="btn btn-ghost" onclick="prevStep()">← חזרה</button>
+        <button class="btn btn-primary" onclick="nextStep(5)">הבא — שאלות סינון →</button>
+      </div>
+    </div>`,
+
+  6: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon" style="background:var(--success);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div><div class="form-card-title">שאלות סינון (אופציונלי)</div><div class="form-card-subtitle">שאלות שמועמדים יענו בעת הגשה — עוזרות לסנן מהר</div></div>
+      </div>
+      <div class="form-card-body">
+        <div style="display:flex;flex-direction:column;gap:var(--s3);" id="sq-list">
+          <div class="sq-item">
+            <span style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);min-width:20px;">1</span>
+            <input type="text" class="form-input" value="האם יש לך ניסיון עם Priority ERP?" style="flex:1;">
+            <select class="form-select" style="width:130px;"><option>כן / לא</option><option>מספר</option><option>טקסט</option></select>
+            <label class="filter-option" style="white-space:nowrap;"><input type="checkbox" checked> חובה</label>
+            <button class="btn btn-danger btn-sm" onclick="this.closest('.sq-item').remove()">×</button>
+          </div>
+          <div class="sq-item">
+            <span style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);min-width:20px;">2</span>
+            <input type="text" class="form-input" value="כמה שנות ניסיון ברכש?" style="flex:1;">
+            <select class="form-select" style="width:130px;"><option>מספר</option><option>כן / לא</option><option>טקסט</option></select>
+            <label class="filter-option" style="white-space:nowrap;"><input type="checkbox" checked> חובה</label>
+            <button class="btn btn-danger btn-sm" onclick="this.closest('.sq-item').remove()">×</button>
+          </div>
+          <div class="sq-item">
+            <span style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);min-width:20px;">3</span>
+            <input type="text" class="form-input" value="מה ציפיות השכר שלך?" style="flex:1;">
+            <select class="form-select" style="width:130px;"><option>מספר</option><option>כן / לא</option><option>טקסט</option></select>
+            <label class="filter-option" style="white-space:nowrap;"><input type="checkbox"> חובה</label>
+            <button class="btn btn-danger btn-sm" onclick="this.closest('.sq-item').remove()">×</button>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onclick="addQuestion()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          הוסף שאלה
+        </button>
+        <div class="alert alert-info" style="font-size:var(--fs-xs);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/></svg>
+          שאלות יוצגו למועמד לפני הגשה. מועמד יראה אילו שאלות הן חובה. השאלות מסייעות לסנן מהר ולהציג מועמדים רלוונטיים יותר.
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <button class="btn btn-ghost" onclick="prevStep()">← חזרה</button>
+        <button class="btn btn-primary" onclick="nextStep(6)">הבא — תצוגה מקדימה →</button>
+      </div>
+    </div>`,
+
+  7: () => `
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="form-card-header-icon" style="background:var(--primary-700);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div><div class="form-card-title">תצוגה מקדימה</div><div class="form-card-subtitle">כך המשרה תיראה למועמדים — בדוק לפני פרסום</div></div>
+      </div>
+      <div class="form-card-body">
+        <div class="alert alert-success" style="margin-bottom:var(--s5);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          <strong>המשרה מוכנה לפרסום!</strong> כל שדות החובה מולאו.
+        </div>
+
+        <div style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-lg);padding:var(--s5);">
+          <div style="font-size:var(--fs-2xl);font-weight:800;color:var(--gray-900);margin-bottom:var(--s2);">${formData.title || 'שם התפקיד'}</div>
+          <div style="display:flex;gap:var(--s2);flex-wrap:wrap;margin-bottom:var(--s4);">
+            <span class="badge badge-gray">${formData.location || 'מיקום'}</span>
+            <span class="badge badge-gray">${WORK_MODEL_LABELS[formData.workModel]}</span>
+            <span class="badge ${formData.confidentialityLevel !== 'none' ? 'badge-warning' : 'badge-success'}">${formData.confidentialityLevel === 'none' ? 'חברה גלויה' : formData.confidentialityLevel === 'partial' ? 'דיסקרטי חלקי' : 'דיסקרטי מלא'}</span>
+          </div>
+          <div style="font-size:var(--fs-xl);font-weight:800;color:var(--teal-700);margin-bottom:var(--s4);">
+            ${formData.salaryMin && formData.salaryMax ? `₪${Number(formData.salaryMin).toLocaleString('he-IL')}–₪${Number(formData.salaryMax).toLocaleString('he-IL')}/חודש` : 'שכר — לא הוגדר'}
+          </div>
+          <div style="display:flex;gap:var(--s3);flex-wrap:wrap;font-size:var(--fs-xs);">
+            ${formData.humanReview ? '<span class="badge badge-teal">אדם קורא</span>' : ''}
+            ${formData.atsReview ? '<span class="badge badge-primary">ATS</span>' : ''}
+            ${formData.aiAssisted ? '<span class="badge" style="background:#faf5ff;color:#7c3aed;">AI</span>' : ''}
+            ${!formData.hasAssignment ? '<span class="badge badge-success">ללא מטלה</span>' : '<span class="badge badge-warning">מטלת בית</span>'}
+            <span class="badge badge-gray">${formData.processSteps.length} שלבים</span>
+          </div>
+        </div>
+
+        <div class="preview-section" style="margin-top:var(--s5);">
+          <div class="preview-section-title">פרטי משרה</div>
+          <div class="preview-row"><span class="preview-label">תחום</span><span class="preview-val">${formData.category || '—'}</span></div>
+          <div class="preview-row"><span class="preview-label">רמת ניסיון</span><span class="preview-val">${EXPERIENCE_LABELS[formData.experienceLevel]}</span></div>
+          <div class="preview-row"><span class="preview-label">סוג משרה</span><span class="preview-val">${EMPLOYMENT_TYPE_LABELS[formData.employmentType]}</span></div>
+          <div class="preview-row"><span class="preview-label">שלבי תהליך</span><span class="preview-val">${formData.processSteps.map(s => s.title).join(' ← ')}</span></div>
+          <div class="preview-row"><span class="preview-label">בונוס</span><span class="preview-val">${formData.includesBonus ? 'כן' : 'לא'}</span></div>
+          <div class="preview-row"><span class="preview-label">קרן השתלמות</span><span class="preview-val">${formData.includesStudyFund ? 'כן' : 'לא'}</span></div>
+          <div class="preview-row"><span class="preview-label">ארוחות</span><span class="preview-val">${formData.includesMeals ? 'כן' : 'לא'}</span></div>
+        </div>
+      </div>
+      <div class="form-card-footer">
+        <button class="btn btn-ghost" onclick="prevStep()">← חזרה לעריכה</button>
+        <button class="btn btn-primary" style="font-size:var(--fs-md);padding:12px 28px;" onclick="publishJob()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          פרסם משרה עכשיו
+        </button>
+      </div>
+    </div>`
+};
+
+function renderProcessStep(s, i) {
+  return `
+    <div class="process-step-item" data-idx="${i}">
+      <div class="ps-drag-handle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+      <div class="ps-num-badge">${i + 1}</div>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);">
+        <input type="text" class="form-input" placeholder="שם שלב" value="${s.title}" style="font-size:var(--fs-xs);">
+        <input type="text" class="form-input" placeholder="תפקיד מראיין" value="${s.role}" style="font-size:var(--fs-xs);">
+        <input type="text" class="form-input" placeholder="תיאור קצר" value="${s.desc}" style="font-size:var(--fs-xs);">
+        <div style="display:flex;align-items:center;gap:var(--s2);"><input type="number" class="form-input" placeholder="דקות" value="${s.minutes}" style="font-size:var(--fs-xs);"><span style="font-size:var(--fs-xs);color:var(--gray-400);white-space:nowrap;">דקות</span></div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeProcessStep(${i})">×</button>
+    </div>`;
+}
+
+function addProcessStep() {
+  formData.processSteps.push({ title: '', desc: '', minutes: 30, role: '' });
+  document.getElementById('process-steps-list').innerHTML = formData.processSteps.map(renderProcessStep).join('');
+}
+
+function removeProcessStep(i) {
+  if (formData.processSteps.length <= 1) return showToast('חייב להיות לפחות שלב אחד');
+  formData.processSteps.splice(i, 1);
+  document.getElementById('process-steps-list').innerHTML = formData.processSteps.map(renderProcessStep).join('');
+}
+
+function addQuestion() {
+  const list = document.getElementById('sq-list');
+  const i = list.children.length + 1;
+  const div = document.createElement('div');
+  div.className = 'sq-item';
+  div.innerHTML = `<span style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);min-width:20px;">${i}</span><input type="text" class="form-input" placeholder="שאלת סינון..." style="flex:1;"><select class="form-select" style="width:130px;"><option>כן / לא</option><option>מספר</option><option>טקסט</option></select><label class="filter-option" style="white-space:nowrap;"><input type="checkbox"> חובה</label><button class="btn btn-danger btn-sm" onclick="this.closest('.sq-item').remove()">×</button>`;
+  list.appendChild(div);
+}
+
+function toggleAssignment(show) {
+  formData.hasAssignment = show;
+  document.getElementById('assignment-details').style.display = show ? 'grid' : 'none';
+}
+
+function toggleReview(type, el) {
+  el.classList.toggle('selected');
+  formData[type === 'human' ? 'humanReview' : type === 'ats' ? 'atsReview' : type === 'ai' ? 'aiAssisted' : 'screeningQuestions'] = el.classList.contains('selected');
+}
+
+function selectConf(level, el) {
+  document.querySelectorAll('.conf-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  formData.confidentialityLevel = level;
+}
+
+function checkSalaryRange() {
+  const min = parseFloat(document.getElementById('f-salmin').value) || 0;
+  const max = parseFloat(document.getElementById('f-salmax').value) || 0;
+  const warn = document.getElementById('salary-warning');
+  if (min && max && (max - min) / min > 0.6) warn.classList.add('show');
+  else warn.classList.remove('show');
+}
+
+function saveStep(n) {
+  if (n === 1) {
+    formData.title = document.getElementById('f-title').value;
+    formData.category = document.getElementById('f-category').value;
+    formData.description = document.getElementById('f-desc').value;
+    formData.responsibilities = document.getElementById('f-resp').value;
+    formData.mustHave = document.getElementById('f-must').value;
+    formData.niceToHave = document.getElementById('f-nice').value;
+    formData.experienceLevel = document.getElementById('f-exp').value;
+    formData.employmentType = document.getElementById('f-emptype').value;
+    formData.location = document.getElementById('f-loc').value;
+    formData.workModel = document.getElementById('f-workmodel').value;
+  }
+  if (n === 2) {
+    formData.salaryMin = document.getElementById('f-salmin').value;
+    formData.salaryMax = document.getElementById('f-salmax').value;
+    formData.includesBonus = document.getElementById('f-bonus').checked;
+    formData.includesStudyFund = document.getElementById('f-study').checked;
+    formData.includesCar = document.getElementById('f-car').checked;
+    formData.includesMeals = document.getElementById('f-meals').checked;
+    formData.includesOptions = document.getElementById('f-options').checked;
+    formData.salaryFlexible = document.getElementById('f-flexible').checked;
+  }
+}
+
+function nextStep(n) {
+  if (n === 1 && !document.getElementById('f-title').value.trim()) return showToast('נא למלא שם תפקיד');
+  if (n === 2 && (!document.getElementById('f-salmin').value || !document.getElementById('f-salmax').value)) return showToast('שכר הוא שדה חובה');
+  saveStep(n);
+  goToStep(n + 1);
+}
+
+function prevStep() { goToStep(currentStep - 1); }
+
+function goToStep(n) {
+  currentStep = n;
+  renderStepsBar();
+  renderStep(n);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function bindStepEvents(n) {
+  if (n === 1) {
+    const wm = document.getElementById('f-workmodel');
+    if (wm) wm.addEventListener('change', () => {
+      document.getElementById('workdays-group').style.display = wm.value === 'hybrid' ? '' : 'none';
+    });
+  }
+}
+
+function publishJob() {
+  showToast('✓ המשרה פורסמה בהצלחה!');
+  setTimeout(() => window.location.href = 'employer-dashboard.html', 2000);
+}
+
+function showToast(msg) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// Init
+renderStepsBar();
+renderStep(1);
+</script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/mobile.js"></script>
+</body>
+</html>
