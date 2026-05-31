@@ -4,7 +4,7 @@
    ==================================================== */
 
 const SUPABASE_URL  = 'https://bqcyeandwqkrqjzcdzyt.supabase.co';
-const SUPABASE_KEY  = 'sb_publishable_KESW1vaMXheQhKJcDdWA3Q_usNyNYD1';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxY3llYW5kd3FrcnFqemNkenl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzYzODgsImV4cCI6MjA5NTgxMjM4OH0.pZy_ybrpxB2UqtS8MMoPfj7zu8Sfs6XJT134XL0SG4c';
 
 /* האם להשתמש בנתוני demo (data.js) כאשר אין חיבור לSupabase?
    true  = demo mode (ללא Supabase)
