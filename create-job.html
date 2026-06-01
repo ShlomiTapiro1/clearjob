@@ -747,21 +747,41 @@ async function publishJob() {
     };
 
     await Jobs.create(employer.id, jobData);
-    showToast('✓ המשרה פורסמה בהצלחה!');
+    showToast('המשרה פורסמה בהצלחה!', 'success');
     setTimeout(() => location.href = 'employer-dashboard.html', 2000);
   } catch (e) {
-    showToast('שגיאה: ' + (e.message || 'לא ניתן לפרסם'));
+    showToast(friendlyError(e), 'error');
     if (pubBtn) { pubBtn.disabled = false; pubBtn.textContent = 'פרסם משרה'; }
   }
 }
 
-function showToast(msg) {
+function friendlyError(e) {
+  const msg = e?.message || '';
+  if (msg.includes('column') && msg.includes('schema cache'))
+    return 'אירעה תקלה טכנית זמנית — אנא נסה שוב עוד רגע';
+  if (msg.includes('violates') && msg.includes('not-null'))
+    return 'יש שדות חובה שלא מולאו — אנא בדוק את הטופס';
+  if (msg.includes('duplicate key') || msg.includes('unique'))
+    return 'הפרטים שהזנת כבר קיימים במערכת';
+  if (msg.includes('JWT') || msg.includes('auth') || msg.includes('session'))
+    return 'פג תוקף החיבור — אנא התחבר מחדש';
+  if (msg.includes('network') || msg.includes('fetch'))
+    return 'בעיית חיבור לאינטרנט — אנא בדוק את החיבור ונסה שוב';
+  if (msg.includes('permission') || msg.includes('policy') || msg.includes('RLS'))
+    return 'אין הרשאה לבצע פעולה זו';
+  return 'אירעה שגיאה בפרסום — אנא נסה שוב';
+}
+
+function showToast(msg, type = 'info') {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div');
   t.className = 'toast';
-  t.textContent = msg;
+  const colors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' };
+  const icons  = { success: '✓', error: '✕', info: 'ℹ' };
+  t.style.cssText = `background:${colors[type]||colors.info};color:#fff;padding:12px 20px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;`;
+  t.innerHTML = `<span>${icons[type]||''}</span><span>${msg}</span>`;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), 4000);
 }
 
 // Init: auth check + render
