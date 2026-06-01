@@ -98,7 +98,7 @@ const Employers = {
 
   async create(userId, companyData) {
     if (DEMO_MODE) return { id: 'emp_new', ...companyData };
-    const { data, error } = await getClient().from('employers').insert({ user_id: userId, ...companyData }).select().single();
+    const { data, error } = await getClient().from('employers').insert({ user_id: userId, is_approved: true, ...companyData }).select().single();
     if (error) throw error;
     return data;
   },
