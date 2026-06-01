@@ -362,7 +362,8 @@ let _applications = [];
 // ---- Tab navigation ----
 function showTab(name, el) {
   ['applications','saved','profile','privacy'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = t === name ? '' : 'none';
+    const div = document.getElementById(`tab-${t}`);
+    if (div) div.style.display = t === name ? '' : 'none';
   });
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
   if (el) el.classList.add('active');
@@ -422,6 +423,11 @@ async function withdrawApp(appId, btn) {
 // ---- Saved Jobs ----
 async function renderSaved() {
   const list = document.getElementById('saved-jobs-list');
+  if (!list) return;
+  if (!_candidateId) {
+    list.innerHTML = '<p style="color:var(--gray-400);font-size:var(--fs-sm);padding:var(--s4);">טוען פרופיל...</p>';
+    return;
+  }
   list.innerHTML = '<p style="color:var(--gray-400);font-size:var(--fs-sm);padding:var(--s4);">טוען...</p>';
   try {
     const saved = await SavedJobs.getByCandidate(_candidateId);
@@ -496,8 +502,9 @@ let _currentUserId = null;
   // 2. Profile
   let profile = null;
   try { profile = await Profiles.get(_currentUserId); } catch {}
-  const firstName = (profile?.full_name || session.user.email || '').split(' ')[0];
-  document.getElementById('navGreeting').textContent = 'שלום, ' + firstName;
+  const fullName = profile?.full_name || '';
+  const firstName = fullName ? fullName.split(' ')[0] : session.user.email?.split('@')[0] || '';
+  document.getElementById('navGreeting').textContent = firstName ? `שלום, ${firstName}` : 'שלום';
 
   // 3. Candidate record
   let candidate = null;

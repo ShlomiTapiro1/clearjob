@@ -104,12 +104,10 @@
     </a>
     <nav class="navbar-nav">
       <a href="jobs.html" class="active">משרות</a>
-      <a href="index.html#employers">למעסיקים</a>
-      <a href="index.html#how">איך זה עובד</a>
     </nav>
-    <div class="navbar-actions">
-      <a href="candidate-dashboard.html" class="btn btn-ghost btn-sm">האזור האישי</a>
-      <a href="employer-dashboard.html" class="btn btn-primary btn-sm">פרסם משרה</a>
+    <div class="navbar-actions" id="navActions">
+      <a href="login.html" class="btn btn-ghost btn-sm">כניסה</a>
+      <a href="register.html" class="btn btn-primary btn-sm">הרשמה</a>
     </div>
   </div>
 </nav>
@@ -443,16 +441,27 @@ function clearFilters() {
   }
   applyFilters();
 
-  // Also update nav if logged in
+  // Update nav based on role
   try {
     const session = await Auth.getSession();
-    if (session) {
+    const nav = document.getElementById('navActions');
+    if (session && nav) {
       const profile = await Profiles.get(session.user.id).catch(()=>null);
       const role = profile?.role || 'candidate';
       const dest = APP_CONFIG.routes[role] || 'candidate-dashboard.html';
-      const label = role === 'employer' ? 'לוח מעסיק' : role === 'admin' ? 'ניהול' : 'האזור שלי';
-      const nav = document.querySelector('.navbar-actions');
-      if (nav) nav.innerHTML = `<a href="${dest}" class="btn btn-ghost btn-sm">${label}</a><button class="btn btn-primary btn-sm" onclick="Auth.signOut().then(()=>location.reload())">יציאה</button>`;
+      if (role === 'employer' || role === 'admin') {
+        const label = role === 'admin' ? 'ניהול' : 'לוח מעסיק';
+        nav.innerHTML = `
+          <a href="${dest}" class="btn btn-ghost btn-sm">${label}</a>
+          <a href="create-job.html" class="btn btn-primary btn-sm">+ פרסם משרה</a>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.signOut().then(()=>location.reload())">יציאה</button>`;
+      } else {
+        const firstName = (profile?.full_name || '').split(' ')[0];
+        nav.innerHTML = `
+          <span style="font-size:var(--fs-sm);color:var(--gray-600);">שלום${firstName ? ', '+firstName : ''}</span>
+          <a href="${dest}" class="btn btn-ghost btn-sm">האזור שלי</a>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.signOut().then(()=>location.reload())">יציאה</button>`;
+      }
     }
   } catch {}
 })();
