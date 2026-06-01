@@ -72,9 +72,9 @@
       <a href="index.html#how">איך זה עובד</a>
       <a href="index.html">אודות</a>
     </nav>
-    <div class="navbar-actions">
-      <a href="candidate-dashboard.html" class="btn btn-ghost btn-sm">כניסה</a>
-      <a href="employer-dashboard.html" class="btn btn-primary btn-sm">פרסם משרה</a>
+    <div class="navbar-actions" id="navActions">
+      <a href="login.html" class="btn btn-ghost btn-sm">כניסה</a>
+      <a href="register.html" class="btn btn-primary btn-sm">הרשמה חינם</a>
     </div>
   </div>
 </nav>
@@ -399,5 +399,22 @@
 <script src="js/data.js"></script>
 <script src="js/db.js"></script>
 <script src="js/mobile.js"></script>
+<script>
+// Smart nav: show dashboard/logout if logged in, else login/register
+(async () => {
+  try {
+    const session = await Auth.getSession();
+    if (!session) return; // not logged in — keep defaults
+    const profile = await Profiles.get(session.user.id).catch(() => null);
+    const role    = profile?.role || session.user.user_metadata?.role || 'candidate';
+    const dest    = APP_CONFIG.routes[role] || 'candidate-dashboard.html';
+    const label   = role === 'employer' ? 'לוח מעסיק' : role === 'admin' ? 'ניהול' : 'לוח מועמד';
+    document.getElementById('navActions').innerHTML = `
+      <a href="${dest}" class="btn btn-ghost btn-sm">${label}</a>
+      <button class="btn btn-primary btn-sm" onclick="Auth.signOut().then(()=>location.reload())">יציאה</button>
+    `;
+  } catch {}
+})();
+</script>
 </body>
 </html>
