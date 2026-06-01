@@ -243,73 +243,77 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/db.js"></script>
 <script>
 let activeQuickFilter = 'all';
 let displayedCount = 0;
 const PAGE_SIZE = 8;
+window._allJobs = [];
 
-function getEmployerDisplay(job) {
-  const emp = getEmployer(job.employerId);
-  if (!emp) return { name: 'חברה', isConfidential: false };
-  if (emp.isConfidential) return { name: `חברה דיסקרטית בתחום ${emp.industry}`, isConfidential: true };
-  return { name: emp.name, isConfidential: false };
+// Parse review_method field (may be JSON string or object)
+function parseReviewMethod(rm) {
+  if (!rm) return {};
+  if (typeof rm === 'object') return rm;
+  try { return JSON.parse(rm); } catch { return {}; }
+}
+
+// Parse hiring_process field
+function parseHiringProcess(hp) {
+  if (!hp) return [];
+  if (Array.isArray(hp)) return hp;
+  try { return JSON.parse(hp); } catch { return []; }
 }
 
 function getFilteredJobs() {
-  let jobs = [...JOBS];
-  const searchQ = document.getElementById('search-input').value.toLowerCase().trim();
+  let jobs = [...window._allJobs];
+  const searchQ   = document.getElementById('search-input').value.toLowerCase().trim();
   const locationQ = document.getElementById('location-input').value.toLowerCase().trim();
   const salaryMin = parseFloat(document.getElementById('salary-min').value) || 0;
   const salaryMax = parseFloat(document.getElementById('salary-max').value) || Infinity;
 
-  const checkedCategories = [...document.querySelectorAll('.filter-section input[type=checkbox][value]:not([name])')].filter(el => el.checked && el.id === '').map(el => el.value);
+  const catBoxes        = [...document.querySelectorAll('.filter-section input[type=checkbox]:not([name]):not([id^=filter])')].filter(el => el.checked).map(el => el.value);
   const checkedWorkModels = [...document.querySelectorAll('input[name=workModel]:checked')].map(el => el.value);
   const checkedExpLevels  = [...document.querySelectorAll('input[name=expLevel]:checked')].map(el => el.value);
   const checkedEmpTypes   = [...document.querySelectorAll('input[name=empType]:checked')].map(el => el.value);
-
-  const filterHuman   = document.getElementById('filter-human').checked;
-  const filterNoAts   = document.getElementById('filter-no-ats').checked;
+  const filterHuman    = document.getElementById('filter-human').checked;
+  const filterNoAts    = document.getElementById('filter-no-ats').checked;
   const filterNoAssign = document.getElementById('filter-no-assign').checked;
-  const filterFast    = document.getElementById('filter-fast').checked;
-  const filterConf    = document.getElementById('filter-confidential').checked;
-
-  // Category checkboxes (those without a name attr)
-  const catBoxes = [...document.querySelectorAll('.filter-section input[type=checkbox]:not([name]):not([id^=filter])')].filter(el => el.checked).map(el => el.value);
+  const filterFast     = document.getElementById('filter-fast').checked;
+  const filterConf     = document.getElementById('filter-confidential').checked;
 
   jobs = jobs.filter(j => {
-    if (searchQ && !j.title.toLowerCase().includes(searchQ) && !j.category.toLowerCase().includes(searchQ) && !j.description.toLowerCase().includes(searchQ)) return false;
-    if (locationQ && !j.location.toLowerCase().includes(locationQ)) return false;
-    if (salaryMin && j.salaryMax < salaryMin) return false;
-    if (salaryMax < Infinity && j.salaryMin > salaryMax) return false;
+    const rm  = parseReviewMethod(j.review_method);
+    const emp = j.employers || {};
+    if (searchQ && !(j.title||'').toLowerCase().includes(searchQ) && !(j.category||'').toLowerCase().includes(searchQ) && !(j.description||'').toLowerCase().includes(searchQ)) return false;
+    if (locationQ && !(j.location||'').toLowerCase().includes(locationQ)) return false;
+    if (salaryMin && j.salary_max < salaryMin) return false;
+    if (salaryMax < Infinity && j.salary_min > salaryMax) return false;
     if (catBoxes.length && !catBoxes.includes(j.category)) return false;
-    if (checkedWorkModels.length && !checkedWorkModels.includes(j.workModel)) return false;
-    if (checkedExpLevels.length && !checkedExpLevels.includes(j.experienceLevel)) return false;
-    const emp = getEmployer(j.employerId);
-    if (checkedEmpTypes.length && !checkedEmpTypes.includes(emp.employerType)) return false;
-    if (filterHuman && !j.reviewMethod.humanReview) return false;
-    if (filterNoAts && j.reviewMethod.atsReview) return false;
-    if (filterNoAssign && j.hasHomeAssignment) return false;
-    if (filterFast && j.averageResponseDays > 5) return false;
-    if (filterConf && !emp.isConfidential) return false;
-
-    if (activeQuickFilter === 'human' && !j.reviewMethod.humanReview) return false;
-    if (activeQuickFilter === 'noAts' && j.reviewMethod.atsReview) return false;
-    if (activeQuickFilter === 'noAssignment' && j.hasHomeAssignment) return false;
-    if (activeQuickFilter === 'few' && j.applicantCount >= 100) return false;
-    if (activeQuickFilter === 'remote' && j.workModel !== 'remote') return false;
-    if (activeQuickFilter === 'fast' && j.averageResponseDays > 3) return false;
-    if (activeQuickFilter === 'fresh' && daysSince(j.createdAt) > 7) return false;
-
+    if (checkedWorkModels.length && !checkedWorkModels.includes(j.work_model)) return false;
+    if (checkedExpLevels.length && !checkedExpLevels.includes(j.experience_level)) return false;
+    if (checkedEmpTypes.length && !checkedEmpTypes.includes(emp.employer_type)) return false;
+    if (filterHuman && !rm.humanReview) return false;
+    if (filterNoAts && rm.atsReview) return false;
+    if (filterNoAssign && j.has_home_assignment) return false;
+    if (filterFast && j.average_response_days > 5) return false;
+    if (filterConf && !emp.is_confidential) return false;
+    if (activeQuickFilter === 'human' && !rm.humanReview) return false;
+    if (activeQuickFilter === 'noAts' && rm.atsReview) return false;
+    if (activeQuickFilter === 'noAssignment' && j.has_home_assignment) return false;
+    if (activeQuickFilter === 'remote' && j.work_model !== 'remote') return false;
+    if (activeQuickFilter === 'fast' && j.average_response_days > 3) return false;
+    if (activeQuickFilter === 'fresh') { const d = new Date(j.created_at); if ((Date.now()-d)/86400000 > 7) return false; }
     return true;
   });
 
   const sort = document.getElementById('sort-select').value;
-  if (sort === 'salary-high') jobs.sort((a, b) => b.salaryMax - a.salaryMax);
-  else if (sort === 'salary-low') jobs.sort((a, b) => a.salaryMin - b.salaryMin);
-  else if (sort === 'applicants') jobs.sort((a, b) => a.applicantCount - b.applicantCount);
-  else if (sort === 'transparency') jobs.sort((a, b) => b.transparencyScore - a.transparencyScore);
-  else jobs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  if (sort === 'salary-high')  jobs.sort((a, b) => (b.salary_max||0) - (a.salary_max||0));
+  else if (sort === 'salary-low') jobs.sort((a, b) => (a.salary_min||0) - (b.salary_min||0));
+  else if (sort === 'transparency') jobs.sort((a, b) => (b.transparency_score||0) - (a.transparency_score||0));
+  else jobs.sort((a, b) => new Date(b.updated_at||b.created_at) - new Date(a.updated_at||a.created_at));
 
   return jobs;
 }
@@ -318,28 +322,39 @@ function renderJobs(jobs, append = false) {
   const grid = document.getElementById('jobs-grid');
   if (!append) grid.innerHTML = '';
 
+  if (!jobs.length && !append) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:var(--s10) var(--s4);color:var(--gray-400);">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--s4);display:block;opacity:.4"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <div style="font-size:var(--fs-md);font-weight:600;margin-bottom:var(--s2);">לא נמצאו משרות</div>
+      <div style="font-size:var(--fs-sm);">נסה לשנות את הפילטרים או לחזור מאוחר יותר</div>
+    </div>`;
+    return;
+  }
+
   jobs.forEach(job => {
-    const emp = getEmployer(job.employerId);
-    const { name: companyName, isConfidential } = getEmployerDisplay(job);
-    const isBoosted = job.lastBoostedAt && daysSince(job.lastBoostedAt) <= 2;
+    const emp = job.employers || {};
+    const isConfidential = emp.is_confidential;
+    const companyName = isConfidential ? `חברה דיסקרטית${emp.industry ? ` בתחום ${emp.industry}` : ''}` : (emp.company_name || '—');
+    const rm = parseReviewMethod(job.review_method);
+    const hp = parseHiringProcess(job.hiring_process);
 
     const card = document.createElement('div');
     card.className = 'job-card-horizontal';
     card.onclick = () => window.location.href = `job-detail.html?id=${job.id}`;
 
     const reviewBadges = [];
-    if (job.reviewMethod.humanReview) reviewBadges.push('<span class="badge badge-teal"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>אדם קורא</span>');
-    if (job.reviewMethod.atsReview) reviewBadges.push('<span class="badge badge-primary">ATS</span>');
-    if (job.reviewMethod.aiAssisted) reviewBadges.push('<span class="badge" style="background:#faf5ff;color:#7c3aed;">AI</span>');
-    if (!job.hasHomeAssignment) reviewBadges.push('<span class="badge badge-success">ללא מטלה</span>');
+    if (rm.humanReview) reviewBadges.push('<span class="badge badge-teal"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>אדם קורא</span>');
+    if (rm.atsReview) reviewBadges.push('<span class="badge badge-primary">ATS</span>');
+    if (!job.has_home_assignment) reviewBadges.push('<span class="badge badge-success">ללא מטלה</span>');
     else reviewBadges.push('<span class="badge badge-warning">מטלת בית</span>');
+
+    const dateStr = job.updated_at ? new Date(job.updated_at).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}) : '';
 
     card.innerHTML = `
       <div class="jch-top">
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;margin-bottom:4px;">
             <div class="jch-title">${job.title}</div>
-            ${isBoosted ? '<span class="boosted-tag">הוקפץ</span>' : ''}
           </div>
           <div class="jch-company">
             ${isConfidential ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-left:3px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>` : ''}
@@ -347,57 +362,28 @@ function renderJobs(jobs, append = false) {
           </div>
         </div>
         <div style="text-align:left;flex-shrink:0;">
-          <div class="jch-salary">${formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</div>
-          ${job.salaryFlexible ? '<div style="font-size:11px;color:var(--gray-400);text-align:left;">גמישות קיימת</div>' : ''}
+          <div class="jch-salary">${formatSalary(job.salary_min, job.salary_max, job.salary_type)}</div>
+          ${job.salary_flexible ? '<div style="font-size:11px;color:var(--gray-400);">גמישות קיימת</div>' : ''}
         </div>
       </div>
-
       <div class="jch-meta">
-        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-left:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${job.location}</span>
-        <span class="jch-divider">·</span>
-        <span>${WORK_MODEL_LABELS[job.workModel]}${job.workModel === 'hybrid' ? ` (${job.workDaysOffice} ימים)` : ''}</span>
-        <span class="jch-divider">·</span>
-        <span>${EMPLOYMENT_TYPE_LABELS[job.employmentType]}</span>
-        <span class="jch-divider">·</span>
-        <span>${EXPERIENCE_LABELS[job.experienceLevel]}</span>
-        <span class="jch-divider">·</span>
-        <span style="color:var(--gray-400);">עודכן ${formatDate(job.updatedAt)}</span>
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-left:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${job.location||''}</span>
+        ${job.work_model ? `<span class="jch-divider">·</span><span>${WORK_MODEL_LABELS[job.work_model]||job.work_model}${job.work_model==='hybrid'&&job.work_days_office?` (${job.work_days_office} ימים)`:''}</span>` : ''}
+        ${job.employment_type ? `<span class="jch-divider">·</span><span>${EMPLOYMENT_TYPE_LABELS[job.employment_type]||job.employment_type}</span>` : ''}
+        ${job.experience_level ? `<span class="jch-divider">·</span><span>${EXPERIENCE_LABELS[job.experience_level]||job.experience_level}</span>` : ''}
+        ${dateStr ? `<span class="jch-divider">·</span><span style="color:var(--gray-400);">עודכן ${dateStr}</span>` : ''}
       </div>
-
       <div class="jch-stats">
-        <div>
-          <div class="jch-stat-label">הגישו מועמדות</div>
-          <div class="jch-stat-value">${job.applicantCount}</div>
-        </div>
-        <div>
-          <div class="jch-stat-label">נצפו</div>
-          <div class="jch-stat-value">${job.viewedApplicantCount}</div>
-        </div>
-        <div>
-          <div class="jch-stat-label">בראיון</div>
-          <div class="jch-stat-value">${job.interviewCount}</div>
-        </div>
-        <div>
-          <div class="jch-stat-label">תגובה ממוצע</div>
-          <div class="jch-stat-value">${job.averageResponseDays} ימים</div>
-        </div>
-        <div>
-          <div class="jch-stat-label">שלבים</div>
-          <div class="jch-stat-value">${job.hiringProcess.length} שלבים</div>
-        </div>
+        <div><div class="jch-stat-label">תגובה ממוצע</div><div class="jch-stat-value">${job.average_response_days||'—'} ${job.average_response_days?'ימים':''}</div></div>
+        <div><div class="jch-stat-label">שלבים</div><div class="jch-stat-value">${hp.length||'—'}</div></div>
+        <div><div class="jch-stat-label">שקיפות</div><div class="jch-stat-value" style="color:var(--teal-600);">${job.transparency_score||0}%</div></div>
       </div>
-
       <div class="jch-bottom">
         <div class="jch-badges">${reviewBadges.join('')}</div>
         <div class="jch-actions">
-          <div class="transparency-score" style="font-size:var(--fs-xs);color:var(--teal-600);font-weight:700;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-            ${job.transparencyScore}% שקיפות
-          </div>
           <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();window.location.href='job-detail.html?id=${job.id}'">פרטים ← הגשה</button>
         </div>
-      </div>
-    `;
+      </div>`;
     grid.appendChild(card);
   });
 }
@@ -434,18 +420,43 @@ function clearFilters() {
   document.getElementById('location-input').value = '';
   activeQuickFilter = 'all';
   document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-filter="all"]').classList.add('active');
+  const allBtn = document.querySelector('[data-filter="all"]');
+  if (allBtn) allBtn.classList.add('active');
   applyFilters();
 }
 
-// Init
-const params = new URLSearchParams(window.location.search);
-if (params.get('q')) document.getElementById('search-input').value = params.get('q');
-applyFilters();
+// ---- Init: load from Supabase ----
+(async () => {
+  const grid = document.getElementById('jobs-grid');
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:var(--s8);color:var(--gray-400);">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto var(--s3);display:block;animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    טוען משרות...
+  </div>`;
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('q')) document.getElementById('search-input').value = params.get('q');
+    window._allJobs = await Jobs.getAll();
+  } catch (e) {
+    window._allJobs = [];
+    console.error('Failed to load jobs:', e);
+  }
+  applyFilters();
+
+  // Also update nav if logged in
+  try {
+    const session = await Auth.getSession();
+    if (session) {
+      const profile = await Profiles.get(session.user.id).catch(()=>null);
+      const role = profile?.role || 'candidate';
+      const dest = APP_CONFIG.routes[role] || 'candidate-dashboard.html';
+      const label = role === 'employer' ? 'לוח מעסיק' : role === 'admin' ? 'ניהול' : 'האזור שלי';
+      const nav = document.querySelector('.navbar-actions');
+      if (nav) nav.innerHTML = `<a href="${dest}" class="btn btn-ghost btn-sm">${label}</a><button class="btn btn-primary btn-sm" onclick="Auth.signOut().then(()=>location.reload())">יציאה</button>`;
+    }
+  } catch {}
+})();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/db.js"></script>
 <script src="js/mobile.js"></script>
 </body>
 </html>

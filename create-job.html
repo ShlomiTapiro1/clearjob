@@ -139,7 +139,10 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/db.js"></script>
 <script>
 const STEPS = [
   { num: 1, label: 'פרטי תפקיד' },
@@ -700,9 +703,56 @@ function bindStepEvents(n) {
   }
 }
 
-function publishJob() {
-  showToast('✓ המשרה פורסמה בהצלחה!');
-  setTimeout(() => window.location.href = 'employer-dashboard.html', 2000);
+async function publishJob() {
+  // Save last step data first
+  saveStep(currentStep);
+
+  const pubBtn = document.querySelector('[onclick="publishJob()"]');
+  if (pubBtn) { pubBtn.disabled = true; pubBtn.textContent = 'מפרסם...'; }
+
+  try {
+    const session = await Auth.getSession();
+    if (!session) { location.href = 'login.html'; return; }
+    const employer = await Employers.getByUserId(session.user.id);
+    if (!employer) throw new Error('לא נמצא פרופיל מעסיק');
+
+    const jobData = {
+      title:                   formData.title || '',
+      category:                formData.category || '',
+      location:                formData.location || '',
+      description:             formData.description || '',
+      responsibilities:        JSON.stringify((formData.responsibilities || '').split('\n').filter(Boolean)),
+      must_have_requirements:  JSON.stringify((formData.mustHave || '').split('\n').filter(Boolean)),
+      nice_to_have_requirements: JSON.stringify((formData.niceToHave || '').split('\n').filter(Boolean)),
+      experience_level:        formData.experienceLevel || 'mid',
+      employment_type:         formData.employmentType || 'full_time',
+      work_model:              formData.workModel || 'office',
+      work_days_office:        parseInt(formData.workDays) || null,
+      salary_min:              parseInt(formData.salaryMin) || null,
+      salary_max:              parseInt(formData.salaryMax) || null,
+      salary_type:             'monthly',
+      salary_flexible:         !!formData.salaryFlexible,
+      includes_bonus:          !!formData.includesBonus,
+      includes_study_fund:     !!formData.includesStudyFund,
+      includes_car:            !!formData.includesCar,
+      includes_meals:          !!formData.includesMeals,
+      includes_options:        !!formData.includesOptions,
+      has_home_assignment:     !!formData.hasAssignment,
+      home_assignment_estimated_hours: parseInt(formData.assignHours) || null,
+      home_assignment_paid:    !!formData.assignPaid,
+      average_response_days:   parseInt(formData.averageResponseDays) || null,
+      review_method:           JSON.stringify({ humanReview: !!formData.humanReview, atsReview: !!formData.atsReview, aiAssisted: !!formData.aiAssisted }),
+      hiring_process:          JSON.stringify(formData.processSteps || []),
+      status:                  'active',
+    };
+
+    await Jobs.create(employer.id, jobData);
+    showToast('✓ המשרה פורסמה בהצלחה!');
+    setTimeout(() => location.href = 'employer-dashboard.html', 2000);
+  } catch (e) {
+    showToast('שגיאה: ' + (e.message || 'לא ניתן לפרסם'));
+    if (pubBtn) { pubBtn.disabled = false; pubBtn.textContent = 'פרסם משרה'; }
+  }
 }
 
 function showToast(msg) {
@@ -714,13 +764,18 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 3500);
 }
 
-// Init
-renderStepsBar();
-renderStep(1);
+// Init: auth check + render
+(async () => {
+  const session = await Auth.getSession();
+  if (!session) { location.href = 'login.html'; return; }
+  const profile = await Profiles.get(session.user.id).catch(()=>null);
+  if (profile && profile.role !== 'employer' && profile.role !== 'admin') {
+    location.href = 'candidate-dashboard.html'; return;
+  }
+  renderStepsBar();
+  renderStep(1);
+})();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/db.js"></script>
 <script src="js/mobile.js"></script>
 </body>
 </html>
