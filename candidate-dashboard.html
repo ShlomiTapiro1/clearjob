@@ -466,14 +466,13 @@ async function saveProfile() {
   try {
     const fullName = document.getElementById('inputFullName').value.trim();
     const phone    = document.getElementById('inputPhone').value.trim();
-    await Profiles.update(_currentUserId, { full_name: fullName });
+    await Profiles.update(_currentUserId, { full_name: fullName, phone });
     await Candidates.update(_candidateId, {
       headline:         document.getElementById('inputHeadline').value.trim(),
       location:         document.getElementById('inputLocation').value.trim(),
       experience_years: parseInt(document.getElementById('inputExperience').value) || 0,
       salary_min:       parseInt(document.getElementById('inputSalaryMin').value) || null,
       salary_max:       parseInt(document.getElementById('inputSalaryMax').value) || null,
-      phone
     });
     document.getElementById('profileDisplayName').textContent = fullName;
     document.getElementById('profileAvatar').textContent = fullName.charAt(0);
