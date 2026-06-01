@@ -8,7 +8,7 @@
   <style>
     body { background: linear-gradient(135deg, var(--primary-700) 0%, var(--teal-700) 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--s4); }
     .auth-card { background: #fff; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); width: 100%; max-width: 520px; overflow: hidden; }
-    .auth-header { padding: var(--s6) var(--s8) var(--s5); text-align: center; border-bottom: 1px solid var(--gray-100); }
+    .auth-header { padding: var(--s4) var(--s8) var(--s3); text-align: center; border-bottom: 1px solid var(--gray-100); }
     .auth-logo { display: flex; align-items: center; justify-content: center; gap: var(--s2); margin-bottom: var(--s3); }
     .auth-logo-icon { width: 40px; height: 40px; background: var(--primary-600); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; }
     .auth-logo-icon svg { width: 22px; height: 22px; color: #fff; }
@@ -17,7 +17,7 @@
     .auth-subtitle { font-size: var(--fs-sm); color: var(--gray-500); }
 
     /* Step indicator */
-    .reg-steps { display: flex; align-items: center; justify-content: center; gap: 0; padding: var(--s5) var(--s8); border-bottom: 1px solid var(--gray-100); }
+    .reg-steps { display: flex; align-items: center; justify-content: center; gap: 0; padding: var(--s3) var(--s8); border-bottom: 1px solid var(--gray-100); }
     .reg-step-item { display: flex; align-items: center; gap: var(--s2); }
     .reg-step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: 700; flex-shrink: 0; transition: all var(--transition-md); }
     .reg-step-num.done { background: var(--teal-600); color: #fff; }
@@ -29,16 +29,16 @@
     .reg-step-connector.done { background: var(--teal-600); }
 
     /* Body */
-    .auth-body { padding: var(--s6) var(--s8); min-height: 320px; }
+    .auth-body { padding: var(--s4) var(--s8); min-height: 220px; }
     .step-panel { display: none; }
     .step-panel.active { display: block; }
 
     /* Role cards */
     .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); margin-top: var(--s4); }
-    .role-card { border: 2px solid var(--gray-200); border-radius: var(--radius-lg); padding: var(--s5); text-align: center; cursor: pointer; transition: all var(--transition-md); }
+    .role-card { border: 2px solid var(--gray-200); border-radius: var(--radius-lg); padding: var(--s4); text-align: center; cursor: pointer; transition: all var(--transition-md); }
     .role-card:hover { border-color: var(--primary-300); background: var(--primary-50); }
     .role-card.selected { border-color: var(--primary-600); background: var(--primary-50); box-shadow: 0 0 0 3px var(--primary-100); }
-    .role-icon { width: 52px; height: 52px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--s3); }
+    .role-icon { width: 44px; height: 44px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--s2); }
     .role-icon.candidate { background: var(--primary-100); }
     .role-icon.employer { background: var(--teal-100); }
     .role-card-title { font-size: var(--fs-md); font-weight: 700; color: var(--gray-800); margin-bottom: var(--s1); }
@@ -68,7 +68,7 @@
     .success-icon { width: 72px; height: 72px; border-radius: 50%; background: var(--success-bg); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--s5); }
 
     /* Footer */
-    .auth-footer-nav { display: flex; justify-content: space-between; align-items: center; padding: var(--s4) var(--s8) var(--s5); border-top: 1px solid var(--gray-100); background: var(--gray-50); }
+    .auth-footer-nav { display: flex; justify-content: space-between; align-items: center; padding: var(--s3) var(--s8) var(--s4); border-top: 1px solid var(--gray-100); background: var(--gray-50); }
     .auth-sign-in { text-align: center; padding: var(--s3) var(--s8); border-top: 1px solid var(--gray-100); font-size: var(--fs-sm); color: var(--gray-600); }
     .auth-sign-in a { color: var(--primary-600); font-weight: 600; }
 
