@@ -108,8 +108,8 @@
       <a href="candidate-dashboard.html" class="active">האזור האישי</a>
     </nav>
     <div class="navbar-actions">
-      <span style="font-size:var(--fs-sm);color:var(--gray-600);">שלום, יעל</span>
-      <button class="btn btn-ghost btn-sm">יציאה</button>
+      <span id="navGreeting" style="font-size:var(--fs-sm);color:var(--gray-600);">שלום</span>
+      <button class="btn btn-ghost btn-sm" onclick="Auth.signOut().then(()=>location.href='login.html')">יציאה</button>
     </div>
   </div>
 </nav>
@@ -123,7 +123,7 @@
       <div class="sidebar-link active" onclick="showTab('applications', this)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         המועמדויות שלי
-        <span class="sidebar-badge">5</span>
+        <span class="sidebar-badge" id="appsBadge" style="display:none">0</span>
       </div>
       <div class="sidebar-link" onclick="showTab('saved', this)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
@@ -150,28 +150,28 @@
   <main class="main-content">
 
     <!-- Welcome Banner -->
-    <div class="alert alert-info" style="margin-bottom:var(--s5);">
+    <div class="alert alert-info" id="welcomeBanner" style="margin-bottom:var(--s5);display:none;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      <div><strong>עדכון חדש!</strong> קורות החיים שלך למשרת <strong>מנהל/ת סושיאל</strong> נפתחו אתמול — אתה בשלב בדיקת מגייס.</div>
+      <div id="welcomeBannerText"></div>
     </div>
 
     <!-- Stats Row -->
     <div class="grid grid-4 gap-4" style="gap:var(--s4);margin-bottom:var(--s5);">
       <div class="stat-card">
         <div class="stat-icon blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-        <div><div class="stat-label">מועמדויות פעילות</div><div class="stat-value">5</div></div>
+        <div><div class="stat-label">מועמדויות פעילות</div><div class="stat-value" id="statActive">0</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon teal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <div><div class="stat-label">קורות חיים נפתחו</div><div class="stat-value">3</div></div>
+        <div><div class="stat-label">קורות חיים נפתחו</div><div class="stat-value" id="statOpened">0</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-        <div><div class="stat-label">הוזמנת לראיון</div><div class="stat-value">1</div></div>
+        <div><div class="stat-label">הוזמנת לראיון</div><div class="stat-value" id="statInterviews">0</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon orange"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-        <div><div class="stat-label">ממתין לתשובה</div><div class="stat-value">3</div></div>
+        <div><div class="stat-label">ממתין לתשובה</div><div class="stat-value" id="statPending">0</div></div>
       </div>
     </div>
 
@@ -236,35 +236,35 @@
     <div id="tab-profile" style="display:none;">
       <div class="page-header">
         <div><div class="page-title">הפרופיל שלי</div></div>
-        <button class="btn btn-primary" onclick="showToast('הפרופיל נשמר!')">שמור שינויים</button>
+        <button class="btn btn-primary" onclick="saveProfile()">שמור שינויים</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);">
         <div class="section-card">
           <div class="section-card-header">פרטים אישיים</div>
           <div style="padding:var(--s5);display:flex;flex-direction:column;gap:var(--s4);">
             <div style="display:flex;align-items:center;gap:var(--s4);">
-              <div class="profile-avatar">י</div>
+              <div class="profile-avatar" id="profileAvatar">?</div>
               <div>
-                <div style="font-weight:700;font-size:var(--fs-md);">יעל כהן</div>
-                <div style="font-size:var(--fs-sm);color:var(--gray-500);">מנהלת שיווק · תל אביב</div>
+                <div style="font-weight:700;font-size:var(--fs-md);" id="profileDisplayName">—</div>
+                <div style="font-size:var(--fs-sm);color:var(--gray-500);" id="profileSubtitle"></div>
               </div>
             </div>
-            <div class="form-group"><label class="form-label">שם מלא</label><input type="text" class="form-input" value="יעל כהן"></div>
+            <div class="form-group"><label class="form-label">שם מלא</label><input type="text" id="inputFullName" class="form-input" value=""></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);">
-              <div class="form-group"><label class="form-label">אימייל</label><input type="email" class="form-input" value="yael@example.com"></div>
-              <div class="form-group"><label class="form-label">טלפון</label><input type="tel" class="form-input" value="050-1234567"></div>
+              <div class="form-group"><label class="form-label">אימייל</label><input type="email" id="inputEmail" class="form-input" value="" readonly></div>
+              <div class="form-group"><label class="form-label">טלפון</label><input type="tel" id="inputPhone" class="form-input" value=""></div>
             </div>
-            <div class="form-group"><label class="form-label">עיר מגורים</label><input type="text" class="form-input" value="תל אביב"></div>
+            <div class="form-group"><label class="form-label">עיר מגורים</label><input type="text" id="inputLocation" class="form-input" value=""></div>
           </div>
         </div>
         <div class="section-card">
           <div class="section-card-header">מידע מקצועי</div>
           <div style="padding:var(--s5);display:flex;flex-direction:column;gap:var(--s4);">
-            <div class="form-group"><label class="form-label">תפקיד נוכחי</label><input type="text" class="form-input" value="מנהלת שיווק"></div>
-            <div class="form-group"><label class="form-label">שנות ניסיון</label><input type="number" class="form-input" value="6"></div>
+            <div class="form-group"><label class="form-label">תפקיד נוכחי</label><input type="text" id="inputHeadline" class="form-input" value=""></div>
+            <div class="form-group"><label class="form-label">שנות ניסיון</label><input type="number" id="inputExperience" class="form-input" value=""></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);">
-              <div class="form-group"><label class="form-label">ציפיות שכר — מינימום</label><input type="number" class="form-input" value="20000"></div>
-              <div class="form-group"><label class="form-label">מקסימום</label><input type="number" class="form-input" value="28000"></div>
+              <div class="form-group"><label class="form-label">ציפיות שכר — מינימום</label><input type="number" id="inputSalaryMin" class="form-input" value=""></div>
+              <div class="form-group"><label class="form-label">מקסימום</label><input type="number" id="inputSalaryMax" class="form-input" value=""></div>
             </div>
             <div class="form-group">
               <label class="form-label">זמינות לתחילת עבודה</label>
@@ -344,8 +344,22 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/db.js"></script>
 <script>
+
+const STATUS_LABELS = {
+  submitted:'הוגשה', reviewing:'בבדיקה', interview_scheduled:'הוזמן לראיון',
+  interview_done:'ראיון בוצע', offer:'הצעת עבודה', accepted:'התקבל',
+  rejected:'נדחה', withdrawn:'נמשכה'
+};
+
+let _candidateId = null;
+let _applications = [];
+
+// ---- Tab navigation ----
 function showTab(name, el) {
   ['applications','saved','profile','privacy'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === name ? '' : 'none';
@@ -355,127 +369,111 @@ function showTab(name, el) {
   if (name === 'saved') renderSaved();
 }
 
-// ---- Applications Table ----
-function renderApplications() {
+// ---- Render Applications ----
+function renderApplications(apps) {
   const tbody = document.getElementById('apps-tbody');
   tbody.innerHTML = '';
-  MY_APPLICATIONS.forEach(app => {
-    const job = getJob(app.jobId);
-    const emp = getEmployer(job.employerId);
-    const isConfidential = emp.isConfidential;
-    const companyName = isConfidential ? `חברה דיסקרטית (${emp.industry})` : emp.name;
-    const lastEvent = app.timeline.filter(e => e.done).slice(-1)[0];
-    const nextEvent = app.timeline.find(e => !e.done);
-    const resumeOpened = app.timeline.find(e => e.status === 'resumeOpened' && e.done);
-
+  if (!apps || apps.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:var(--s8);color:var(--gray-400);">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--s3);display:block;opacity:.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      עדיין לא הגשת מועמדויות — <a href="jobs.html" style="color:var(--primary-600);">חפש משרות</a>
+    </td></tr>`;
+    return;
+  }
+  apps.forEach(app => {
+    const job = app.jobs || {};
+    const emp = job.employers || {};
+    const companyName = emp.is_confidential ? `חברה דיסקרטית` : (emp.company_name || '—');
     const tr = document.createElement('tr');
+    const d = new Date(app.created_at);
+    const dateStr = d.toLocaleDateString('he-IL', { day:'2-digit', month:'2-digit' });
     tr.innerHTML = `
       <td>
-        <div class="app-title"><a href="job-detail.html?id=${job.id}" style="color:inherit;">${job.title}</a></div>
+        <div class="app-title"><a href="job-detail.html?id=${job.id}" style="color:inherit;">${job.title || '—'}</a></div>
         <div class="app-company">${companyName}</div>
       </td>
-      <td style="white-space:nowrap;font-size:var(--fs-xs);color:var(--gray-500);">${formatDate(app.appliedAt)}</td>
+      <td style="white-space:nowrap;font-size:var(--fs-xs);color:var(--gray-500);">${dateStr}</td>
       <td>
-        <span class="seen-dot ${resumeOpened ? 'seen' : 'unseen'}"></span>
-        <span style="font-size:var(--fs-xs);color:var(--gray-600);margin-right:4px;">${resumeOpened ? 'נפתחו' : 'טרם נפתחו'}</span>
+        <span class="seen-dot unseen"></span>
+        <span style="font-size:var(--fs-xs);color:var(--gray-600);margin-right:4px;">טרם נפתחו</span>
       </td>
-      <td><span class="status-pill ${app.currentStatus}">${STATUS_LABELS[app.currentStatus] || app.currentStatus}</span></td>
-      <td style="font-size:var(--fs-xs);color:var(--gray-600);">${nextEvent ? nextEvent.label : '—'}</td>
+      <td><span class="status-pill ${app.status}">${STATUS_LABELS[app.status] || app.status}</span></td>
+      <td style="font-size:var(--fs-xs);color:var(--gray-600);">—</td>
       <td>
         <div style="display:flex;gap:var(--s2);">
-          <button class="btn btn-ghost btn-sm" onclick="openTimeline('${app.id}')">Timeline</button>
-          ${app.currentStatus !== 'rejected' && app.currentStatus !== 'withdrawn' ?
+          ${app.status !== 'rejected' && app.status !== 'withdrawn' ?
             `<button class="btn btn-danger btn-sm" onclick="withdrawApp('${app.id}', this)">משיכה</button>` : ''}
         </div>
-      </td>
-    `;
+      </td>`;
     tbody.appendChild(tr);
   });
 }
 
-function openTimeline(appId) {
-  const app = MY_APPLICATIONS.find(a => a.id === appId);
-  const job = getJob(app.jobId);
-  const emp = getEmployer(job.employerId);
-  const companyName = emp.isConfidential ? `חברה דיסקרטית` : emp.name;
-
-  document.getElementById('timeline-title').textContent = `${job.title}`;
-  document.getElementById('timeline-subtitle').textContent = `${companyName} · הוגשה ${formatDate(app.appliedAt)}`;
-
-  const tl = document.getElementById('timeline-content');
-  tl.innerHTML = '';
-  app.timeline.forEach((event, i) => {
-    const isLast = i === app.timeline.length - 1;
-    const dotClass = event.done
-      ? (i === app.timeline.filter(e=>e.done).length-1 ? 'current' : 'done')
-      : 'pending';
-
-    const item = document.createElement('div');
-    item.className = 'timeline-item';
-    item.innerHTML = `
-      ${!isLast ? '<div class="timeline-line"></div>' : ''}
-      <div class="timeline-dot ${dotClass}">
-        ${dotClass === 'done' ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
-      </div>
-      <div class="timeline-content">
-        <div class="timeline-date">${event.date ? formatDate(event.date) : '—'}</div>
-        <div class="timeline-label" style="${!event.done ? 'color:var(--gray-400);' : ''}">${event.label}</div>
-        ${event.note ? `<div class="timeline-note">${event.note}</div>` : ''}
-      </div>
-    `;
-    tl.appendChild(item);
-  });
-
-  const rb = document.getElementById('rejection-box');
-  const rt = document.getElementById('rejection-text');
-  if (app.rejectionReason) {
-    rb.style.display = 'flex';
-    rt.innerHTML = `<strong>התקבלה החלטה לא להמשיך בתהליך.</strong><br>
-      <span style="font-size:var(--fs-xs);">סיבה מרכזית: ${REJECTION_REASONS[app.rejectionReason]}</span><br>
-      <span style="font-size:var(--fs-xs);margin-top:4px;display:block;">תודה שהגשת/י מועמדות. אנו מאחלים לך הצלחה בחיפוש.</span>`;
-  } else {
-    rb.style.display = 'none';
-  }
-
-  const panel = document.getElementById('timeline-panel');
-  panel.classList.add('open');
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function closeTimeline() {
-  document.getElementById('timeline-panel').classList.remove('open');
-}
-
-function withdrawApp(appId, btn) {
+async function withdrawApp(appId, btn) {
   if (!confirm('האם אתה בטוח שברצונך למשוך מועמדות זו?')) return;
-  const app = MY_APPLICATIONS.find(a => a.id === appId);
-  app.currentStatus = 'withdrawn';
-  renderApplications();
+  btn.disabled = true;
+  await Applications.update(appId, { status: 'withdrawn' });
+  const app = _applications.find(a => a.id === appId);
+  if (app) app.status = 'withdrawn';
+  renderApplications(_applications);
   showToast('המועמדות נמשכה');
 }
 
 // ---- Saved Jobs ----
-function renderSaved() {
+async function renderSaved() {
   const list = document.getElementById('saved-jobs-list');
-  const saved = [JOBS[0], JOBS[3], JOBS[7]];
-  list.innerHTML = '';
-  saved.forEach(job => {
-    const emp = getEmployer(job.employerId);
-    const card = document.createElement('div');
-    card.className = 'saved-job-card';
-    card.innerHTML = `
-      <div style="flex:1;">
-        <div style="font-weight:700;font-size:var(--fs-sm);color:var(--gray-800);">${job.title}</div>
-        <div style="font-size:var(--fs-xs);color:var(--gray-500);">${emp.isConfidential ? 'חברה דיסקרטית' : emp.name} · ${job.location}</div>
-        <div style="font-size:var(--fs-sm);font-weight:700;color:var(--teal-700);margin-top:4px;">${formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</div>
-      </div>
-      <div style="display:flex;gap:var(--s2);">
-        <a href="job-detail.html?id=${job.id}" class="btn btn-primary btn-sm">פרטים</a>
-        <button class="btn btn-ghost btn-sm" onclick="this.closest('.saved-job-card').remove();showToast('הוסרה מהמועדפים')">הסר</button>
-      </div>
-    `;
-    list.appendChild(card);
-  });
+  list.innerHTML = '<p style="color:var(--gray-400);font-size:var(--fs-sm);padding:var(--s4);">טוען...</p>';
+  try {
+    const saved = await SavedJobs.getByCandidate(_candidateId);
+    list.innerHTML = '';
+    if (!saved || saved.length === 0) {
+      list.innerHTML = `<div style="text-align:center;padding:var(--s8);color:var(--gray-400);">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto var(--s3);display:block;opacity:.4"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        אין משרות שמורות — <a href="jobs.html" style="color:var(--primary-600);">גלה משרות</a>
+      </div>`;
+      return;
+    }
+    saved.forEach(job => {
+      if (!job) return;
+      const emp = job.employers || {};
+      const card = document.createElement('div');
+      card.className = 'saved-job-card';
+      card.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:var(--fs-sm);color:var(--gray-800);">${job.title || '—'}</div>
+          <div style="font-size:var(--fs-xs);color:var(--gray-500);">${emp.is_confidential ? 'חברה דיסקרטית' : (emp.company_name || '')} · ${job.location || ''}</div>
+        </div>
+        <div style="display:flex;gap:var(--s2);">
+          <a href="job-detail.html?id=${job.id}" class="btn btn-primary btn-sm">פרטים</a>
+          <button class="btn btn-ghost btn-sm" onclick="this.closest('.saved-job-card').remove();showToast('הוסרה מהמועדפים')">הסר</button>
+        </div>`;
+      list.appendChild(card);
+    });
+  } catch { list.innerHTML = '<p style="color:var(--gray-400);padding:var(--s4);">לא ניתן לטעון</p>'; }
+}
+
+// ---- Save Profile ----
+async function saveProfile() {
+  const btn = document.querySelector('[onclick="saveProfile()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'שומר...'; }
+  try {
+    const fullName = document.getElementById('inputFullName').value.trim();
+    const phone    = document.getElementById('inputPhone').value.trim();
+    await Profiles.update(_currentUserId, { full_name: fullName });
+    await Candidates.update(_candidateId, {
+      headline:         document.getElementById('inputHeadline').value.trim(),
+      location:         document.getElementById('inputLocation').value.trim(),
+      experience_years: parseInt(document.getElementById('inputExperience').value) || 0,
+      salary_min:       parseInt(document.getElementById('inputSalaryMin').value) || null,
+      salary_max:       parseInt(document.getElementById('inputSalaryMax').value) || null,
+      phone
+    });
+    document.getElementById('profileDisplayName').textContent = fullName;
+    document.getElementById('profileAvatar').textContent = fullName.charAt(0);
+    document.getElementById('navGreeting').textContent = 'שלום, ' + fullName.split(' ')[0];
+    showToast('הפרופיל עודכן בהצלחה ✓');
+  } catch (e) { showToast('שגיאה בשמירה: ' + e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'שמור שינויים'; } }
 }
 
 function showToast(msg) {
@@ -487,11 +485,64 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 3500);
 }
 
-renderApplications();
+// ---- Init ----
+let _currentUserId = null;
+(async () => {
+  // 1. Auth check
+  const session = await Auth.getSession();
+  if (!session) { location.href = 'login.html'; return; }
+  _currentUserId = session.user.id;
+
+  // 2. Profile
+  let profile = null;
+  try { profile = await Profiles.get(_currentUserId); } catch {}
+  const firstName = (profile?.full_name || session.user.email || '').split(' ')[0];
+  document.getElementById('navGreeting').textContent = 'שלום, ' + firstName;
+
+  // 3. Candidate record
+  let candidate = null;
+  try { candidate = await Candidates.getByUserId(_currentUserId); } catch {}
+  if (!candidate) {
+    try { candidate = await Candidates.create(_currentUserId, {}); } catch {}
+  }
+  _candidateId = candidate?.id || null;
+
+  // 4. Populate profile form
+  document.getElementById('profileDisplayName').textContent = profile?.full_name || '—';
+  document.getElementById('profileAvatar').textContent = (profile?.full_name || '?').charAt(0).toUpperCase();
+  document.getElementById('profileSubtitle').textContent =
+    [candidate?.headline, candidate?.location].filter(Boolean).join(' · ');
+  document.getElementById('inputFullName').value  = profile?.full_name  || '';
+  document.getElementById('inputEmail').value     = session.user.email  || '';
+  document.getElementById('inputPhone').value     = candidate?.phone    || '';
+  document.getElementById('inputLocation').value  = candidate?.location || '';
+  document.getElementById('inputHeadline').value  = candidate?.headline || '';
+  document.getElementById('inputExperience').value= candidate?.experience_years || '';
+  document.getElementById('inputSalaryMin').value = candidate?.salary_min || '';
+  document.getElementById('inputSalaryMax').value = candidate?.salary_max || '';
+
+  // 5. Applications
+  if (_candidateId) {
+    try {
+      _applications = await Applications.getByCandidate(_candidateId);
+    } catch { _applications = []; }
+  }
+  renderApplications(_applications);
+
+  // Stats
+  const active     = _applications.filter(a => !['rejected','withdrawn'].includes(a.status)).length;
+  const interviews = _applications.filter(a => ['interview_scheduled','interview_done'].includes(a.status)).length;
+  const pending    = _applications.filter(a => ['submitted','reviewing'].includes(a.status)).length;
+  document.getElementById('statActive').textContent     = active;
+  document.getElementById('statOpened').textContent     = 0;
+  document.getElementById('statInterviews').textContent = interviews;
+  document.getElementById('statPending').textContent    = pending;
+  if (active > 0) {
+    const badge = document.getElementById('appsBadge');
+    badge.textContent = active; badge.style.display = '';
+  }
+})();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/db.js"></script>
 <script src="js/mobile.js"></script>
 </body>
 </html>
