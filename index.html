@@ -326,81 +326,96 @@
   </div>
 </footer>
 
-<script src="js/data.js"></script>
-<script>
-  // Render sample job cards on homepage
-  const WORK_ICONS = { hybrid: '🏢↔🏠', office: '🏢', remote: '🏠' };
-  const grid = document.getElementById('sample-jobs-grid');
-
-  const sampleIds = ['job1', 'job2', 'job6', 'job8'];
-  sampleIds.forEach(id => {
-    const job = getJob(id);
-    const emp = getEmployer(job.employerId);
-    const days = daysSince(job.createdAt);
-    const companyName = emp.isConfidential ? `חברה דיסקרטית בתחום ${emp.industry}` : emp.name;
-
-    const card = document.createElement('div');
-    card.className = 'job-card';
-    card.onclick = () => window.location.href = `job-detail.html?id=${job.id}`;
-    card.innerHTML = `
-      <div class="job-card-header">
-        <div>
-          <div class="job-card-title">${job.title}</div>
-          <div class="job-card-company">${companyName}</div>
-        </div>
-        ${emp.isConfidential ? '<span class="confidential-banner"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> דיסקרטי</span>' : ''}
-      </div>
-      <div class="job-card-meta">
-        <span class="job-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${job.location}</span>
-        <span>·</span>
-        <span>${WORK_MODEL_LABELS[job.workModel]}</span>
-        <span>·</span>
-        <span>${EMPLOYMENT_TYPE_LABELS[job.employmentType]}</span>
-      </div>
-      <div class="job-salary">${formatSalary(job.salaryMin, job.salaryMax, job.salaryType)}</div>
-      <div class="job-card-stats">
-        <div class="job-stat">
-          <span class="job-stat-label">הגישו</span>
-          <span class="job-stat-value">${job.applicantCount} מועמדים</span>
-        </div>
-        <div class="job-stat">
-          <span class="job-stat-label">נצפו</span>
-          <span class="job-stat-value">${job.viewedApplicantCount}</span>
-        </div>
-        <div class="job-stat">
-          <span class="job-stat-label">תגובה ממוצע</span>
-          <span class="job-stat-value">${job.averageResponseDays} ימים</span>
-        </div>
-        <div class="job-stat">
-          <span class="job-stat-label">שלבים</span>
-          <span class="job-stat-value">${job.hiringProcess.length} שלבים</span>
-        </div>
-      </div>
-      <div class="job-card-footer">
-        <div style="display:flex;gap:var(--s2);flex-wrap:wrap;">
-          ${job.reviewMethod.humanReview ? '<span class="badge badge-teal">אדם קורא</span>' : ''}
-          ${job.reviewMethod.atsReview ? '<span class="badge badge-primary">ATS</span>' : ''}
-          ${job.hasHomeAssignment ? '<span class="badge badge-warning">מטלת בית</span>' : '<span class="badge badge-success">ללא מטלה</span>'}
-        </div>
-        <div class="transparency-score">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-          ${job.transparencyScore}% שקיפות
-        </div>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-
-  // Hero search redirect
-  document.getElementById('hero-search-btn').addEventListener('click', (e) => {
-    const q = document.getElementById('hero-search-input').value;
-    if (q) { e.preventDefault(); window.location.href = `jobs.html?q=${encodeURIComponent(q)}`; }
-  });
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/db.js"></script>
+<script>
+(async () => {
+  const grid = document.getElementById('sample-jobs-grid');
+  const WM = { hybrid: 'היברידי', office: 'משרד', remote: 'מרחוק' };
+
+  // Hero search
+  document.getElementById('hero-search-btn').addEventListener('click', (e) => {
+    const q = document.getElementById('hero-search-input').value;
+    if (q) { e.preventDefault(); window.location.href = `jobs.html?q=${encodeURIComponent(q)}`; }
+  });
+
+  // Navbar auth
+  try {
+    const session = await Auth.getSession();
+    if (session) {
+      const profile = await Profiles.get(session.user.id).catch(()=>null);
+      const nav = document.querySelector('.navbar-actions');
+      if (nav && profile) {
+        const firstName = profile.full_name ? profile.full_name.split(' ')[0] : session.user.email.split('@')[0];
+        const dashLink = profile.role === 'employer' ? 'employer-dashboard.html' : 'candidate-dashboard.html';
+        nav.innerHTML = `
+          <span style="font-size:var(--fs-sm);color:var(--gray-600)">שלום, ${firstName}</span>
+          <a href="${dashLink}" class="btn btn-ghost btn-sm">האזור שלי</a>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.signOut().then(()=>location.reload())" style="color:var(--error)">יציאה</button>`;
+      }
+    }
+  } catch(_) {}
+
+  // Load real jobs from Supabase
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:var(--s8);">
+    <div style="display:inline-block;width:32px;height:32px;border:3px solid var(--gray-200);border-top-color:var(--primary-600);border-radius:50%;animation:spin .8s linear infinite;"></div>
+  </div>`;
+
+  try {
+    const jobs = await Jobs.getAll();
+    const active = jobs.filter(j => j.status === 'active').slice(0, 4);
+
+    if (!active.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:var(--s8);color:var(--gray-400);">
+        <p style="font-size:var(--fs-lg);margin-bottom:var(--s4)">עדיין לא פורסמו משרות</p>
+        <a href="register.html" class="btn btn-primary">הירשם כמעסיק ופרסם ראשון</a>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = '';
+    active.forEach(job => {
+      const company = job.employers?.company_name || 'חברה';
+      const wm = WM[job.work_model] || job.work_model || '';
+      const sal = job.salary_min && job.salary_max
+        ? `₪${job.salary_min.toLocaleString()}–${job.salary_max.toLocaleString()}`
+        : job.salary_min ? `מ-₪${job.salary_min.toLocaleString()}` : 'שכר לפי ניסיון';
+
+      const card = document.createElement('div');
+      card.className = 'job-card';
+      card.style.cursor = 'pointer';
+      card.onclick = () => location.href = `job-detail.html?id=${job.id}`;
+      card.innerHTML = `
+        <div class="job-card-header">
+          <div>
+            <div class="job-card-title">${job.title}</div>
+            <div class="job-card-company">${company}</div>
+          </div>
+        </div>
+        <div class="job-card-meta">
+          ${job.location ? `<span class="job-meta-item">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${job.location}</span><span>·</span>` : ''}
+          ${wm ? `<span>${wm}</span>` : ''}
+        </div>
+        <div class="job-salary">${sal}</div>
+        <div class="job-card-footer">
+          <div style="display:flex;gap:var(--s2);flex-wrap:wrap;">
+            <span class="badge badge-success">פתוח להגשה</span>
+          </div>
+          <a href="job-detail.html?id=${job.id}" class="btn btn-primary btn-sm">לפרטים</a>
+        </div>`;
+      grid.appendChild(card);
+    });
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:var(--s8);color:var(--gray-400);">
+      לא ניתן לטעון משרות כרגע — <a href="jobs.html">נסה בדף המשרות</a>
+    </div>`;
+  }
+})();
+</script>
 <script src="js/mobile.js"></script>
 <script src="js/a11y.js"></script>
 <script>

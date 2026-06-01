@@ -264,6 +264,10 @@ const Applications = {
     if (error) throw error;
   },
 
+  async updateStatus(id, status) {
+    return Applications.update(id, { status, updated_at: new Date().toISOString() });
+  },
+
   async getAll() {
     if (DEMO_MODE) return MY_APPLICATIONS;
     const { data, error } = await getClient().from('applications').select('*, jobs(title), candidates(profiles(full_name))').order('created_at', { ascending: false });

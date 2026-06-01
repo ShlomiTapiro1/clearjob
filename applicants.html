@@ -152,27 +152,14 @@
   <aside class="app-sidebar">
     <div class="app-sidebar-header">
       <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-500);margin-bottom:var(--s2);">בחר משרה</div>
-      <select class="job-selector" onchange="selectJob(this.value)">
-        <option value="job1">מנהל/ת רכש (74 מועמדים)</option>
-        <option value="job5">מנהל/ת סושיאל (89 מועמדים)</option>
-        <option value="job6">מפתח/ת Full Stack (178 מועמדים)</option>
+      <select class="job-selector" id="job-selector" onchange="selectJob(this.value)">
+        <option value="">טוען משרות...</option>
       </select>
     </div>
 
     <div style="padding:var(--s4) var(--s5);">
-      <div class="stats-mini" style="flex-direction:column;gap:var(--s2);">
-        <div class="sm-item"><span class="sm-num" style="color:var(--primary-600);">74</span> סה"כ מגישים</div>
-        <div class="sm-item"><span class="sm-num" style="color:var(--warning);">43</span> ממתינים לבדיקה</div>
-        <div class="sm-item"><span class="sm-num" style="color:var(--teal-600);">6</span> בראיון</div>
-        <div class="sm-item"><span class="sm-num" style="color:var(--success);">1</span> קיבלו הצעה</div>
-        <div class="sm-item"><span class="sm-num" style="color:var(--error);">18</span> נדחו</div>
-      </div>
-    </div>
-
-    <div style="padding:0 var(--s4);margin-top:var(--s2);">
-      <div class="alert alert-warning" style="font-size:var(--fs-xs);">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-        43 ממתינים מעל 7 ימים
+      <div class="stats-mini" style="flex-direction:column;gap:var(--s2);" id="sidebar-stats">
+        <div class="sm-item" style="color:var(--gray-400);">בחר משרה לצפייה בנתונים</div>
       </div>
     </div>
 
@@ -272,153 +259,187 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/db.js"></script>
 <script>
+// ========== KANBAN COLUMNS — mapped to Supabase statuses ==========
 const COLUMNS = [
-  { id: 'new',       label: 'חדש',           colorClass: 'col-badge-new' },
-  { id: 'viewed',    label: 'נצפה',           colorClass: 'col-badge-viewed' },
-  { id: 'screening', label: 'סינון ראשוני',   colorClass: 'col-badge-screen' },
-  { id: 'manager',   label: 'הועבר למנהל',    colorClass: 'col-badge-manager' },
-  { id: 'interview1',label: 'ראיון ראשון',    colorClass: 'col-badge-int1' },
-  { id: 'interview2',label: 'ראיון מתקדם',    colorClass: 'col-badge-int2' },
-  { id: 'offer',     label: 'הצעה',           colorClass: 'col-badge-offer' },
-  { id: 'rejected',  label: 'נדחה',           colorClass: 'col-badge-reject' },
-  { id: 'saved',     label: 'שמור לעתיד',     colorClass: 'col-badge-saved' }
+  { id: 'submitted',           label: 'הוגש',            colorClass: 'col-badge-new' },
+  { id: 'reviewing',           label: 'בבדיקה',          colorClass: 'col-badge-viewed' },
+  { id: 'interview_scheduled', label: 'ראיון נקבע',      colorClass: 'col-badge-int1' },
+  { id: 'interview_done',      label: 'ראיון הושלם',     colorClass: 'col-badge-int2' },
+  { id: 'offer',               label: 'הצעה',            colorClass: 'col-badge-offer' },
+  { id: 'rejected',            label: 'נדחה',            colorClass: 'col-badge-reject' },
 ];
 
-let applicants = JSON.parse(JSON.stringify(JOB1_APPLICANTS));
-let draggedId = null;
+let applicants = [];
+let draggedId  = null;
 let selectedId = null;
-let minScore = 0;
-let searchQ = '';
+let searchQ    = '';
+let currentJobId = null;
 
-function getScore(a) { return a.score; }
-function scoreClass(s) { return s >= 85 ? 'score-hi' : s >= 70 ? 'score-md' : 'score-lo'; }
-
+// ========== RENDER ==========
 function buildKanban() {
   const board = document.getElementById('kanban-board');
   board.innerHTML = '';
 
-  COLUMNS.forEach(col => {
-    const colApps = applicants.filter(a =>
-      a.status === col.id &&
-      a.score >= minScore &&
-      (searchQ === '' || a.name.includes(searchQ) || a.role.includes(searchQ))
-    );
+  if (!currentJobId) {
+    board.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;flex:1;color:var(--gray-400);font-size:var(--fs-sm);">בחר משרה מהרשימה בצד</div>`;
+    return;
+  }
 
+  const filtered = applicants.filter(a =>
+    searchQ === '' ||
+    (a._name||'').includes(searchQ) ||
+    (a._headline||'').includes(searchQ)
+  );
+
+  COLUMNS.forEach(col => {
+    const colApps = filtered.filter(a => a.status === col.id);
     const colEl = document.createElement('div');
     colEl.className = 'kanban-col';
     colEl.dataset.col = col.id;
-
     colEl.innerHTML = `
       <div class="kanban-col-header ${col.colorClass}">
         <span class="col-title">${col.label}</span>
         <span class="col-count">${colApps.length}</span>
       </div>
-      <div class="kanban-col-body" id="col-${col.id}" ondragover="onDragOver(event, '${col.id}')" ondrop="onDrop(event, '${col.id}')" ondragleave="onDragLeave(event)">
+      <div class="kanban-col-body" id="col-${col.id}"
+        ondragover="onDragOver(event,'${col.id}')"
+        ondrop="onDrop(event,'${col.id}')"
+        ondragleave="onDragLeave(event)">
         ${colApps.map(a => buildCard(a)).join('')}
-      </div>
-    `;
+      </div>`;
     board.appendChild(colEl);
   });
 }
 
 function buildCard(a) {
+  const date = a.created_at ? new Date(a.created_at).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}) : '';
   return `
     <div class="cand-card" id="card-${a.id}" draggable="true"
-      ondragstart="onDragStart(event, '${a.id}')"
+      ondragstart="onDragStart(event,'${a.id}')"
       ondragend="onDragEnd(event)"
       onclick="openPanel('${a.id}')">
-      <div class="cand-card-name">
-        ${a.isConfidential ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--gray-400);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' : ''}
-        ${a.name}
-      </div>
-      <div class="cand-card-role">${a.role}</div>
+      <div class="cand-card-name">${a._name || 'מועמד/ת'}</div>
+      <div class="cand-card-role">${a._headline || ''}</div>
       <div class="cand-card-meta">
-        <span class="score-badge ${scoreClass(a.score)}">${a.score}</span>
-        <span class="cand-date">${a.appliedAt}</span>
+        <span class="cand-date">${date}</span>
       </div>
     </div>`;
 }
 
-// --- Drag & Drop ---
-function onDragStart(e, id) {
-  draggedId = id;
-  setTimeout(() => { const c = document.getElementById(`card-${id}`); if (c) c.classList.add('dragging'); }, 0);
-  e.dataTransfer.effectAllowed = 'move';
+function updateSidebarStats() {
+  const el = document.getElementById('sidebar-stats');
+  if (!el) return;
+  const total   = applicants.length;
+  const pending = applicants.filter(a => a.status === 'submitted').length;
+  const inter   = applicants.filter(a => ['interview_scheduled','interview_done'].includes(a.status)).length;
+  const offered = applicants.filter(a => a.status === 'offer').length;
+  const rejected= applicants.filter(a => a.status === 'rejected').length;
+  el.innerHTML = `
+    <div class="sm-item"><span class="sm-num" style="color:var(--primary-600);">${total}</span> סה"כ מגישים</div>
+    <div class="sm-item"><span class="sm-num" style="color:var(--warning);">${pending}</span> ממתינים לבדיקה</div>
+    <div class="sm-item"><span class="sm-num" style="color:var(--teal-600);">${inter}</span> בראיון</div>
+    <div class="sm-item"><span class="sm-num" style="color:var(--success);">${offered}</span> קיבלו הצעה</div>
+    <div class="sm-item"><span class="sm-num" style="color:var(--error);">${rejected}</span> נדחו</div>`;
 }
 
-function onDragEnd(e) {
+// ========== LOAD DATA ==========
+async function selectJob(jobId) {
+  if (!jobId) return;
+  currentJobId = jobId;
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;flex:1;">
+    <div style="width:32px;height:32px;border:3px solid var(--gray-200);border-top-color:var(--primary-600);border-radius:50%;animation:spin .8s linear infinite;"></div>
+  </div>`;
+
+  try {
+    const raw = await Applications.getByJob(jobId);
+    applicants = (raw || []).map(a => ({
+      ...a,
+      _name:     a.candidates?.profiles?.full_name || 'מועמד/ת',
+      _headline: a.candidates?.headline || a.candidates?.profiles?.full_name || '',
+      _exp:      a.candidates?.experience_years,
+      _location: a.candidates?.location,
+    }));
+    buildKanban();
+    updateSidebarStats();
+  } catch(e) {
+    board.innerHTML = `<div style="padding:var(--s8);color:var(--error);">שגיאה בטעינת מועמדים</div>`;
+  }
+}
+
+// ========== DRAG & DROP ==========
+function onDragStart(e, id) {
+  draggedId = id;
+  setTimeout(() => document.getElementById(`card-${id}`)?.classList.add('dragging'), 0);
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd() {
   document.querySelectorAll('.cand-card').forEach(c => c.classList.remove('dragging'));
   document.querySelectorAll('.kanban-col-body').forEach(c => c.classList.remove('drag-over'));
 }
-
 function onDragOver(e, colId) {
   e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
   document.querySelectorAll('.kanban-col-body').forEach(c => c.classList.remove('drag-over'));
-  document.getElementById(`col-${colId}`).classList.add('drag-over');
+  document.getElementById(`col-${colId}`)?.classList.add('drag-over');
 }
-
 function onDragLeave(e) {
   e.currentTarget.querySelector?.('.kanban-col-body')?.classList?.remove('drag-over');
 }
-
-function onDrop(e, colId) {
+async function onDrop(e, colId) {
   e.preventDefault();
   if (!draggedId) return;
-  const app = applicants.find(a => a.id === draggedId);
-  if (!app) return;
-  const prevStatus = app.status;
-  if (colId === 'rejected') { openRejectModal(draggedId); return; }
-  app.status = colId;
-  buildKanban();
-  showStatusToast(app.name, colId, prevStatus);
+  if (colId === 'rejected') { openRejectModal(draggedId); draggedId = null; return; }
+  await moveCard(draggedId, colId);
   draggedId = null;
 }
 
-function showStatusToast(name, newStatus, prevStatus) {
-  const colLabel = COLUMNS.find(c => c.id === newStatus)?.label || newStatus;
-  showToast(`${name} → ${colLabel}`);
+// ========== MOVE CARD ==========
+async function moveCard(id, newStatus) {
+  if (newStatus === 'rejected') { openRejectModal(id); return; }
+  const a = applicants.find(ap => ap.id === id);
+  if (!a) return;
+  a.status = newStatus;
+  buildKanban();
+  if (selectedId === id) openPanel(id);
+  showToast(`סטטוס עודכן → ${COLUMNS.find(c => c.id === newStatus)?.label || newStatus}`);
+  try { await Applications.updateStatus(id, newStatus); }
+  catch(err) { showToast('שגיאה בשמירת סטטוס', 'error'); a.status = a._prevStatus || a.status; buildKanban(); }
 }
 
-// --- Panel ---
+// ========== DETAIL PANEL ==========
 function openPanel(id) {
   const a = applicants.find(ap => ap.id === id);
   if (!a) return;
   selectedId = id;
-  document.getElementById('dp-name').textContent = a.isConfidential ? 'מועמד/ת דיסקרטי/ת' : a.name;
-  document.getElementById('dp-role').textContent = a.role;
+  document.getElementById('dp-name').textContent = a._name || 'מועמד/ת';
+  document.getElementById('dp-role').textContent = a._headline || '';
 
   const colLabel = COLUMNS.find(c => c.id === a.status)?.label || a.status;
+  const dateStr  = a.created_at ? new Date(a.created_at).toLocaleDateString('he-IL') : '—';
+
   document.getElementById('dp-body').innerHTML = `
     <div style="margin-bottom:var(--s4);">
       <span class="badge badge-primary" style="font-size:var(--fs-xs);">${colLabel}</span>
-      ${a.isConfidential ? '<span class="badge badge-gray" style="font-size:var(--fs-xs);margin-right:var(--s2);">דיסקרטי</span>' : ''}
     </div>
     <div style="margin-bottom:var(--s5);">
       <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">פרטי מועמד</div>
-      <div class="dp-row"><span class="dp-label">תפקיד</span><span class="dp-val">${a.role}</span></div>
-      <div class="dp-row"><span class="dp-label">ניסיון</span><span class="dp-val">${a.exp}</span></div>
-      <div class="dp-row"><span class="dp-label">ציפיות שכר</span><span class="dp-val">₪${a.salary}</span></div>
-      <div class="dp-row"><span class="dp-label">הגיש</span><span class="dp-val">${a.appliedAt}</span></div>
-      <div class="dp-row"><span class="dp-label">ציון התאמה</span><span class="dp-val"><span class="score-badge ${scoreClass(a.score)}">${a.score}/100</span></span></div>
-    </div>
-    <div style="margin-bottom:var(--s5);">
-      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">שלב נוכחי</div>
-      <div style="background:var(--gray-50);border-radius:var(--radius-lg);padding:var(--s3) var(--s4);font-size:var(--fs-sm);font-weight:600;color:var(--gray-700);">${colLabel}</div>
-    </div>
-    <div style="margin-bottom:var(--s5);">
-      <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">הערות פנימיות</div>
-      <textarea class="form-textarea" rows="3" placeholder="הוסף הערה פנימית..." style="font-size:var(--fs-xs);" id="notes-${a.id}"></textarea>
+      ${a._headline ? `<div class="dp-row"><span class="dp-label">תפקיד</span><span class="dp-val">${a._headline}</span></div>` : ''}
+      ${a._exp != null ? `<div class="dp-row"><span class="dp-label">ניסיון</span><span class="dp-val">${a._exp} שנים</span></div>` : ''}
+      ${a._location ? `<div class="dp-row"><span class="dp-label">מיקום</span><span class="dp-val">${a._location}</span></div>` : ''}
+      <div class="dp-row"><span class="dp-label">הגיש</span><span class="dp-val">${dateStr}</span></div>
+      <div class="dp-row"><span class="dp-label">שלב נוכחי</span><span class="dp-val">${colLabel}</span></div>
     </div>
     <div>
       <div style="font-size:var(--fs-xs);font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--s3);">שינוי שלב מהיר</div>
       <select class="form-select" style="font-size:var(--fs-xs);" onchange="moveCard('${a.id}', this.value)">
         ${COLUMNS.map(c => `<option value="${c.id}" ${a.status === c.id ? 'selected' : ''}>${c.label}</option>`).join('')}
       </select>
-    </div>
-  `;
+    </div>`;
 
   document.getElementById('dp-footer').innerHTML = `
     <button class="btn btn-teal" onclick="moveCard('${a.id}', getNextStatus('${a.status}'))">
@@ -426,14 +447,9 @@ function openPanel(id) {
       העבר לשלב הבא
     </button>
     <div style="display:flex;gap:var(--s2);">
-      <button class="btn btn-secondary" onclick="moveCard('${a.id}', 'saved')">שמור לעתיד</button>
+      <button class="btn btn-secondary" onclick="moveCard('${a.id}','offer')">הצעה</button>
       <button class="btn btn-danger" onclick="openRejectModal('${a.id}')">דחה</button>
-    </div>
-    <button class="btn btn-ghost" onclick="showToast('הזמנה לראיון נשלחה!')">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      הזמן לראיון
-    </button>
-  `;
+    </div>`;
 
   document.getElementById('detail-panel').classList.add('open');
 }
@@ -442,74 +458,91 @@ function closePanel() {
   document.getElementById('detail-panel').classList.remove('open');
   selectedId = null;
 }
-
 function getNextStatus(current) {
   const idx = COLUMNS.findIndex(c => c.id === current);
-  if (idx < 0 || idx >= COLUMNS.length - 3) return current;
+  if (idx < 0 || idx >= COLUMNS.length - 2) return current;
   return COLUMNS[idx + 1].id;
 }
 
-function moveCard(id, newStatus) {
-  if (newStatus === 'rejected') { openRejectModal(id); return; }
-  const a = applicants.find(ap => ap.id === id);
-  if (a) { a.status = newStatus; }
-  buildKanban();
-  if (selectedId === id) openPanel(id);
-  showToast(`סטטוס עודכן → ${COLUMNS.find(c => c.id === newStatus)?.label || newStatus}`);
-}
-
-// --- Reject Modal ---
+// ========== REJECT MODAL ==========
 let rejectTargetId = null;
 function openRejectModal(id) {
   rejectTargetId = id;
   document.getElementById('reject-modal').classList.add('open');
-  document.body.style.overflow = 'hidden';
 }
 function closeRejectModal() {
   document.getElementById('reject-modal').classList.remove('open');
-  document.body.style.overflow = '';
   rejectTargetId = null;
 }
-function confirmReject() {
+async function confirmReject() {
   const reason = document.getElementById('reject-reason').value;
   if (!reason) return showToast('נא לבחור סיבת דחייה');
   const a = applicants.find(ap => ap.id === rejectTargetId);
-  if (a) { a.status = 'rejected'; a.rejectionReason = reason; }
+  if (a) { a.status = 'rejected'; }
   closeRejectModal();
   buildKanban();
   closePanel();
-  showToast(`${a?.name || 'מועמד'} נדחה בצורה מכבדת — הודעה נשלחה`);
+  showToast(`${a?._name || 'מועמד'} נדחה בצורה מכבדת`);
+  try { await Applications.updateStatus(rejectTargetId, 'rejected'); } catch(_) {}
 }
 
-// --- Filters ---
+// ========== FILTERS ==========
 function searchCandidates(q) { searchQ = q; buildKanban(); }
 function filterByScore(val) {
-  minScore = parseInt(val);
   document.getElementById('score-val').textContent = val;
   buildKanban();
 }
-function filterCandidates(val) {
-  if (val === 'confidential') { applicants = JOB1_APPLICANTS.filter(a => a.isConfidential); }
-  else if (val === 'high-score') { applicants = JOB1_APPLICANTS.filter(a => a.score >= 85); }
-  else { applicants = JSON.parse(JSON.stringify(JOB1_APPLICANTS)); }
-  buildKanban();
-}
-function selectJob(id) { showToast(`טוען מועמדים עבור ${id}...`); }
+function filterCandidates() { buildKanban(); }
 
-function showToast(msg) {
+// ========== TOAST ==========
+function showToast(msg, type) {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div');
   t.className = 'toast';
   t.textContent = msg;
+  if (type === 'error') t.style.background = '#fef2f2';
   c.appendChild(t);
   setTimeout(() => t.remove(), 3500);
 }
 
-buildKanban();
+// ========== INIT ==========
+(async () => {
+  const session = await Auth.getSession();
+  if (!session) { location.href = 'login.html'; return; }
+
+  const profile = await Profiles.get(session.user.id).catch(()=>null);
+  if (profile && profile.role !== 'employer' && profile.role !== 'admin') {
+    location.href = 'candidate-dashboard.html'; return;
+  }
+
+  let employer = null;
+  try { employer = await Employers.getByUserId(session.user.id); } catch {}
+  if (!employer) { location.href = 'employer-dashboard.html'; return; }
+
+  // Load employer's jobs
+  let jobs = [];
+  try { jobs = await Jobs.getByEmployer(employer.id); } catch {}
+
+  const sel = document.getElementById('job-selector');
+  if (!jobs.length) {
+    sel.innerHTML = '<option value="">אין משרות — פרסם משרה ראשונה</option>';
+    document.getElementById('kanban-board').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:var(--s4);color:var(--gray-400);">
+        <p>עדיין לא פרסמת משרות</p>
+        <a href="create-job.html" class="btn btn-primary btn-sm">+ פרסם משרה ראשונה</a>
+      </div>`;
+    return;
+  }
+
+  sel.innerHTML = jobs.map(j => `<option value="${j.id}">${j.title}</option>`).join('');
+
+  // Load from URL param or first job
+  const params = new URLSearchParams(location.search);
+  const preselect = params.get('job') || jobs[0].id;
+  sel.value = preselect;
+  await selectJob(preselect);
+})();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/db.js"></script>
 <script src="js/mobile.js"></script>
 <script src="js/a11y.js"></script>
 </body>
