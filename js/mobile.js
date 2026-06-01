@@ -174,7 +174,7 @@
     const overlay = document.createElement('div');
     overlay.id = 'sidebarOverlay';
     overlay.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:390';
-    overlay.onclick = closeSidebar;
+    overlay.onclick = function() { window.closeSidebar && window.closeSidebar(); };
     document.body.appendChild(overlay);
 
     window.openSidebar = function() {

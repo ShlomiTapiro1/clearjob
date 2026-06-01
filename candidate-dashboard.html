@@ -350,7 +350,8 @@
 <script src="js/db.js"></script>
 <script>
 
-const STATUS_LABELS = {
+// Supabase status labels (supplement data.js STATUS_LABELS)
+const DB_STATUS_LABELS = {
   submitted:'הוגשה', reviewing:'בבדיקה', interview_scheduled:'הוזמן לראיון',
   interview_done:'ראיון בוצע', offer:'הצעת עבודה', accepted:'התקבל',
   rejected:'נדחה', withdrawn:'נמשכה'
@@ -398,7 +399,7 @@ function renderApplications(apps) {
         <span class="seen-dot unseen"></span>
         <span style="font-size:var(--fs-xs);color:var(--gray-600);margin-right:4px;">טרם נפתחו</span>
       </td>
-      <td><span class="status-pill ${app.status}">${STATUS_LABELS[app.status] || app.status}</span></td>
+      <td><span class="status-pill ${app.status}">${DB_STATUS_LABELS[app.status] || app.status}</span></td>
       <td style="font-size:var(--fs-xs);color:var(--gray-600);">—</td>
       <td>
         <div style="display:flex;gap:var(--s2);">
