@@ -348,10 +348,13 @@
     try {
       const { user } = await Auth.signUp(email, password, selectedRole, { full_name: fullName });
 
+      // Create profile row (trigger may or may not exist — upsert is safe either way)
+      await Profiles.create(user.id, selectedRole, fullName);
+
       if (selectedRole === 'employer') {
-        await Employers.create(user.id, { company_name: company, is_approved: false });
+        await Employers.create(user.id, { company_name: company });
       } else {
-        await Candidates.create(user.id, {});
+        await Candidates.create(user.id, { headline: '', location: '' });
       }
 
       // Success UI
@@ -361,7 +364,7 @@
       document.getElementById('dashboardLink').href = dashLink;
       document.getElementById('successMsg').textContent =
         selectedRole === 'employer'
-          ? 'החשבון שלך ממתין לאישור — תקבל/י אימייל תוך 24 שעות'
+          ? `ברוכים הבאים, ${firstName}! החשבון מוכן — תוכל/י לפרסם משרות עכשיו`
           : `ברוכים הבאים, ${firstName}! אנחנו שמחים שהצטרפת`;
       updateStepUI(4);
     } catch (err) {

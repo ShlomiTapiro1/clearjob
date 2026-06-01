@@ -65,6 +65,15 @@ const Profiles = {
     return data;
   },
 
+  async create(userId, role, fullName) {
+    if (DEMO_MODE) return { id: userId, role, full_name: fullName };
+    const { data, error } = await getClient().from('profiles').upsert({
+      id: userId, role, full_name: fullName, created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+    }, { onConflict: 'id' }).select().single();
+    if (error) throw error;
+    return data;
+  },
+
   async update(userId, updates) {
     if (DEMO_MODE) return { ...updates };
     const { data, error } = await getClient().from('profiles').update(updates).eq('id', userId).select().single();
